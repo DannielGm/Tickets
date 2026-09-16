@@ -6,6 +6,81 @@
     <title>{% block title %}Sistema de Tickets de IT{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='%23C2410C'/><path d='M5 8h14v2.5a1.5 1.5 0 0 0 0 3V16H5v-2.5a1.5 1.5 0 0 0 0-3z' fill='%23FFF7ED'/></svg>">
+    <script>
+        (function() {
+            var root = document.documentElement;
+            var cookieName = 'theme';
+            var cookieExpiryDays = 30;
+
+            function readCookie(name) {
+                var v = document.cookie.match(new RegExp('(?:^|; )' + name + '=([^;]*)'));
+                return v ? decodeURIComponent(v[1]) : null;
+            }
+
+            function writeCookie(name, value, days) {
+                var d = new Date();
+                d.setTime(d.getTime() + days * 86400000);
+                document.cookie = name + '=' + encodeURIComponent(value) + '; expires=' + d.toUTCString() + '; path=/';
+            }
+
+            function effectiveTheme() {
+                return root.getAttribute('data-theme') || null;
+            }
+
+            function applyTheme(theme) {
+                if (theme === 'dark') {
+                    root.setAttribute('data-theme', 'dark');
+                } else if (theme === 'light') {
+                    root.setAttribute('data-theme', 'light');
+                } else {
+                    root.removeAttribute('data-theme');
+                }
+                writeCookie(cookieName, theme, cookieExpiryDays);
+                updateToggleIcon(theme);
+            }
+
+            function updateToggleIcon(theme) {
+                var btn = document.getElementById('themeToggle');
+                if (!btn) return;
+                if (theme === 'dark') {
+                    btn.innerHTML = '<svg class="theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M21 12.8a9.5 9.5 0 1 1-4.2-2.6 7 7 0 0 0 4.2 2.6z" fill="currentColor"/></svg>';
+                    btn.setAttribute('aria-label', 'Modo claro');
+                } else if (theme === 'light') {
+                    btn.innerHTML = '<svg class="theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 1.5V3.5M12 20.5V22.5M20.5 12H22.5M1.5 12H3.5M18.4 5.6 19.7 6.9M4.3 17.1l1.3 1.3M18.4 18.4l1.3-1.3M4.3 5.6 5.6 4.3"/></g></svg>';
+                    btn.setAttribute('aria-label', 'Modo oscuro');
+                } else {
+                    btn.innerHTML = '<svg class="theme-icon" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="12" cy="12" r="4.5" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 1.5V3.5M12 20.5V22.5M20.5 12H22.5M1.5 12H3.5M18.4 5.6 19.7 6.9M4.3 17.1l1.3 1.3M18.4 18.4l1.3-1.3M4.3 5.6 5.6 4.3"/></g></svg>';
+                    btn.setAttribute('aria-label', 'Usar tema del sistema');
+                }
+            }
+
+            function preferredTheme() {
+                return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+            }
+
+            var saved = readCookie(cookieName);
+            if (saved === 'dark' || saved === 'light') {
+                applyTheme(saved);
+            } else {
+                root.removeAttribute('data-theme');
+                updateToggleIcon(null);
+            }
+
+            var btn = document.getElementById('themeToggle');
+            if (btn) {
+                btn.addEventListener('click', function() {
+                    var cur = effectiveTheme();
+                    if (cur === 'dark') {
+                        applyTheme('light');
+                    } else if (cur === 'light') {
+                        applyTheme('dark');
+                    } else {
+                        applyTheme(preferredTheme());
+                    }
+                });
+            }
+        })();
+    </script>
 </head>
 <body>
     <a class="skip-link" href="#contenido">Saltar al contenido</a>
@@ -16,6 +91,7 @@
             {% if session.get('user_id') %}
                 Sesión iniciada como <strong>{{ session.get('username') }}</strong>
                 ({{ session.get('role') | role_label }})
+                <button type="button" class="theme-toggle" id="themeToggle" aria-label="Usar tema del sistema"></button>
                 <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar sesión</a>
             {% else %}
                 <a href="{{ url_for('login') }}" class="login-btn">Iniciar sesión</a>

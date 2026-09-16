@@ -27,9 +27,10 @@
     --open-bg: #F1F5F9;      --open-fg: #334155;
     --progress-bg: #EFF6FF;  --progress-fg: #1D4ED8;
     --finished-bg: #ECFDF5;  --finished-fg: #047857;
+    --prio-low-bg: #ECFDF5; --prio-low-fg: #047857;
     --prio-medium-bg: #FEF3C7; --prio-medium-fg: #92400E;
     --prio-high-bg: #FEF2F2;   --prio-high-fg: #B91C1C;
-    --role-it-bg: #FFEDD5;   --role-it-fg: #9A3412;
+    --role-IT-bg: #FFEDD5;   --role-IT-fg: #9A3412;
 
     --flash-success-bg: #ECFDF5; --flash-success-fg: #047857; --flash-success-border: #A7F3D0;
     --flash-error-bg: #FEF2F2;   --flash-error-fg: #B91C1C;   --flash-error-border: #FECACA;
@@ -62,9 +63,10 @@
         --open-bg: rgba(148, 163, 184, 0.16);    --open-fg: #CBD5E1;
         --progress-bg: rgba(96, 165, 250, 0.16); --progress-fg: #93C5FD;
         --finished-bg: rgba(52, 211, 153, 0.16); --finished-fg: #6EE7B7;
+        --prio-low-bg: rgba(16, 185, 129, 0.12); --prio-low-fg: #6EE7B7;
         --prio-medium-bg: rgba(251, 191, 36, 0.16); --prio-medium-fg: #FCD34D;
         --prio-high-bg: rgba(248, 113, 113, 0.16);  --prio-high-fg: #FCA5A5;
-        --role-it-bg: rgba(251, 146, 60, 0.16);  --role-it-fg: #FDBA74;
+        --role-IT-bg: rgba(251, 146, 60, 0.16);  --role-IT-fg: #FDBA74;
 
         --flash-success-bg: rgba(52, 211, 153, 0.12); --flash-success-fg: #6EE7B7; --flash-success-border: rgba(110, 231, 183, 0.35);
         --flash-error-bg: rgba(248, 113, 113, 0.12);  --flash-error-fg: #FCA5A5;   --flash-error-border: rgba(252, 165, 165, 0.35);
@@ -74,6 +76,102 @@
         --shadow-card-lg: 0 4px 12px rgba(0, 0, 0, 0.45);
         --focus-ring: 0 0 0 2px rgba(251, 146, 60, 0.35);
     }
+}
+
+/* ===== Manual theme override (dark/light toggle) ===== */
+/* When the user picks a mode explicitly, data-theme wins over the
+   prefers-color-scheme media query, and the matching token set is
+   applied on top of the default (light) :root values above. */
+[data-theme="dark"] {
+    --page: #0F172A;
+    --surface: #1E293B;
+    --surface-alt: #24324D;
+    --hover-bg: rgba(251, 146, 60, 0.10);
+    --active-tint: rgba(251, 146, 60, 0.16);
+    --line: #334155;
+
+    --brand-300: #92400E;
+    --brand-600: #F97316;
+
+    --ink-900: #E2E8F0;
+    --ink-700: #CBD5E1;
+    --ink-500: #94A3B8;
+    --ink-300: #475569;
+
+    --accent-text: #FDBA74;
+
+    --open-bg: rgba(148, 163, 184, 0.16);
+    --open-fg: #CBD5E1;
+    --progress-bg: rgba(96, 165, 250, 0.16);
+    --progress-fg: #93C5FD;
+    --finished-bg: rgba(52, 211, 153, 0.16);
+    --finished-fg: #6EE7B7;
+    --prio-low-bg: rgba(16, 185, 129, 0.12);
+    --prio-low-fg: #6EE7B7;
+    --prio-medium-bg: rgba(251, 191, 36, 0.16);
+    --prio-medium-fg: #FCD34D;
+    --prio-high-bg: rgba(248, 113, 113, 0.16);
+    --prio-high-fg: #FCA5A5;
+    --role-IT-bg: rgba(251, 146, 60, 0.16);
+    --role-IT-fg: #FDBA74;
+
+    --flash-success-bg: rgba(52, 211, 153, 0.12);
+    --flash-success-fg: #6EE7B7;
+    --flash-success-border: rgba(110, 231, 183, 0.35);
+    --flash-error-bg: rgba(248, 113, 113, 0.12);
+    --flash-error-fg: #FCA5A5;
+    --flash-error-border: rgba(252, 165, 165, 0.35);
+
+    --shadow-nav: 0 2px 6px rgba(0, 0, 0, 0.5);
+    --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+    --shadow-card-lg: 0 4px 12px rgba(0, 0, 0, 0.45);
+    --focus-ring: 0 0 0 2px rgba(251, 146, 60, 0.35);
+}
+
+[data-theme="light"] {
+    --page: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-alt: #FFFFFF;
+    --hover-bg: rgba(124, 45, 18, 0.06);
+    --active-tint: rgba(124, 45, 18, 0.10);
+    --line: #E5E7EB;
+
+    --brand-300: #FDBA74;
+    --brand-600: #C2410C;
+
+    --ink-900: #1F2937;
+    --ink-700: #374151;
+    --ink-500: #6B7280;
+    --ink-300: #9CA3AF;
+
+    --accent-text: #C2410C;
+
+    --open-bg: rgba(251, 146, 60, 0.10);
+    --open-fg: #9A3412;
+    --progress-bg: rgba(96, 165, 250, 0.12);
+    --progress-fg: #1D4ED8;
+    --finished-bg: rgba(16, 185, 129, 0.12);
+    --finished-fg: #047857;
+    --prio-low-bg: rgba(16, 185, 129, 0.10);
+    --prio-low-fg: #047857;
+    --prio-medium-bg: rgba(251, 191, 36, 0.14);
+    --prio-medium-fg: #92400E;
+    --prio-high-bg: rgba(239, 68, 68, 0.12);
+    --prio-high-fg: #B91C1C;
+    --role-IT-bg: #FFEDD5;
+    --role-IT-fg: #9A3412;
+
+    --flash-success-bg: #ECFDF5;
+    --flash-success-fg: #047857;
+    --flash-success-border: #A7F3D0;
+    --flash-error-bg: #FEF2F2;
+    --flash-error-fg: #B91C1C;
+    --flash-error-border: #FECACA;
+
+    --shadow-nav: 0 1px 3px rgba(0, 0, 0, 0.08);
+    --shadow-card: 0 2px 6px rgba(0, 0, 0, 0.06);
+    --shadow-card-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+    --focus-ring: 0 0 0 2px rgba(194, 65, 12, 0.22);
 }
 
 /* ===== Reset & Base ===== */
@@ -124,6 +222,34 @@ body {
 
 .nav-user strong {
     font-weight: 600;
+}
+
+.theme-toggle {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: 1px solid var(--brand-300);
+    border-radius: 4px;
+    background-color: transparent;
+    color: var(--accent-text);
+    cursor: pointer;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+    padding: 0;
+}
+
+.theme-toggle:hover {
+    background-color: var(--hover-bg);
+}
+
+.theme-toggle:focus-visible {
+    outline: 2px solid var(--brand-600);
+    outline-offset: 2px;
+}
+
+.theme-icon {
+    display: block;
 }
 
 .logout-btn, .login-btn {
@@ -416,9 +542,9 @@ body {
     letter-spacing: 0.5px;
 }
 
-.role-it {
-    background-color: var(--role-it-bg);
-    color: var(--role-it-fg);
+.role-IT {
+    background-color: var(--role-IT-bg);
+    color: var(--role-IT-fg);
 }
 
 .role-user {
@@ -710,8 +836,8 @@ body {
 }
 
 .prio-low {
-    background-color: var(--open-bg);
-    color: var(--open-fg);
+    background-color: var(--prio-low-bg);
+    color: var(--prio-low-fg);
 }
 
 .prio-medium {

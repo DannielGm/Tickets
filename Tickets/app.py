@@ -46,7 +46,7 @@ STATUS_LABELS = {
 
 ROLE_LABELS = {
     'user': 'Usuario',
-    'it': 'TI',
+    'it': 'IT',
 }
 
 PRIORITIES = {

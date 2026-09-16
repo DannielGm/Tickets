@@ -1,5 +1,5 @@
 {% extends "base.html" %}
-{% block title %}Ticket #{{ ticket['id'] }} - Sistema de Tickets de TI{% endblock %}
+{% block title %}Ticket #{{ ticket['id'] }} - Sistema de Tickets de IT{% endblock %}
 
 {% block content %}
 <div class="ticket-detail">
@@ -29,7 +29,7 @@
 
     {% if session.get('role') == 'it' %}
     <div class="ticket-actions">
-        <h3>Acciones de TI</h3>
+        <h3>Acciones de IT</h3>
         <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}" class="mini-form">
             <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Abierto</button>
             <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">En progreso</button>

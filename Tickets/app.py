@@ -299,7 +299,7 @@ def it_required(f):
             flash('Inicie sesión para continuar.', 'error')
             return redirect(url_for('login'))
         if session.get('role') != 'it':
-            flash('Acceso denegado. Se requieren permisos de TI.', 'error')
+            flash('Acceso denegado. Se requieren permisos de IT.', 'error')
             return redirect(url_for('user_dashboard'))
         return f(*args, **kwargs)
     return decorated
@@ -767,7 +767,7 @@ def assign_ticket(ticket_id):
         ).fetchone()
         if not target:
             conn.close()
-            flash('Solo se puede asignar a un usuario de TI.', 'error')
+            flash('Solo se puede asignar a un usuario de IT.', 'error')
             return redirect(url_for('ticket_detail', ticket_id=ticket_id))
 
     conn.execute(

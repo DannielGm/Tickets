@@ -1,5 +1,12 @@
-/* ===== Design tokens (white + orange) ===== */
+/* ===== Design tokens (white + orange, dark-mode aware) ===== */
 :root {
+    --page: #FFFFFF;
+    --surface: #FFFFFF;
+    --surface-alt: #FFF7ED;
+    --hover-bg: #FFF7ED;
+    --active-tint: #FFEDD5;
+    --line: #E5E7EB;
+
     --brand-050: #FFF7ED;
     --brand-100: #FFEDD5;
     --brand-300: #FDBA74;
@@ -7,11 +14,66 @@
     --brand-600: #EA580C;
     --brand-700: #C2410C;   /* primary accent: AA contrast on white */
     --brand-800: #9A3412;
+
     --ink-900: #1F2937;
     --ink-700: #374151;
     --ink-500: #6B7280;
     --ink-300: #D1D5DB;
-    --line: #E5E7EB;
+
+    --accent-text: var(--brand-700);
+    --btn-primary-bg: var(--brand-700);
+    --btn-primary-hover: var(--brand-800);
+
+    --open-bg: #F1F5F9;      --open-fg: #334155;
+    --progress-bg: #EFF6FF;  --progress-fg: #1D4ED8;
+    --finished-bg: #ECFDF5;  --finished-fg: #047857;
+    --prio-medium-bg: #FEF3C7; --prio-medium-fg: #92400E;
+    --prio-high-bg: #FEF2F2;   --prio-high-fg: #B91C1C;
+    --role-it-bg: #FFEDD5;   --role-it-fg: #9A3412;
+
+    --flash-success-bg: #ECFDF5; --flash-success-fg: #047857; --flash-success-border: #A7F3D0;
+    --flash-error-bg: #FEF2F2;   --flash-error-fg: #B91C1C;   --flash-error-border: #FECACA;
+
+    --shadow-nav: 0 2px 6px rgba(124, 45, 18, 0.08);
+    --shadow-card: 0 2px 8px rgba(124, 45, 18, 0.08);
+    --shadow-card-lg: 0 4px 12px rgba(124, 45, 18, 0.10);
+    --focus-ring: 0 0 0 2px rgba(194, 65, 12, 0.18);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --page: #0F172A;
+        --surface: #1E293B;
+        --surface-alt: #24324D;
+        --hover-bg: rgba(251, 146, 60, 0.10);
+        --active-tint: rgba(251, 146, 60, 0.16);
+        --line: #334155;
+
+        --brand-300: #92400E;
+        --brand-600: #F97316;
+
+        --ink-900: #E2E8F0;
+        --ink-700: #CBD5E1;
+        --ink-500: #94A3B8;
+        --ink-300: #475569;
+
+        --accent-text: #FDBA74;
+
+        --open-bg: rgba(148, 163, 184, 0.16);    --open-fg: #CBD5E1;
+        --progress-bg: rgba(96, 165, 250, 0.16); --progress-fg: #93C5FD;
+        --finished-bg: rgba(52, 211, 153, 0.16); --finished-fg: #6EE7B7;
+        --prio-medium-bg: rgba(251, 191, 36, 0.16); --prio-medium-fg: #FCD34D;
+        --prio-high-bg: rgba(248, 113, 113, 0.16);  --prio-high-fg: #FCA5A5;
+        --role-it-bg: rgba(251, 146, 60, 0.16);  --role-it-fg: #FDBA74;
+
+        --flash-success-bg: rgba(52, 211, 153, 0.12); --flash-success-fg: #6EE7B7; --flash-success-border: rgba(110, 231, 183, 0.35);
+        --flash-error-bg: rgba(248, 113, 113, 0.12);  --flash-error-fg: #FCA5A5;   --flash-error-border: rgba(252, 165, 165, 0.35);
+
+        --shadow-nav: 0 2px 6px rgba(0, 0, 0, 0.5);
+        --shadow-card: 0 2px 8px rgba(0, 0, 0, 0.35);
+        --shadow-card-lg: 0 4px 12px rgba(0, 0, 0, 0.45);
+        --focus-ring: 0 0 0 2px rgba(251, 146, 60, 0.35);
+    }
 }
 
 /* ===== Reset & Base ===== */
@@ -23,7 +85,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-color: #FFFFFF;
+    background-color: var(--page);
     color: var(--ink-900);
     line-height: 1.6;
 }
@@ -35,20 +97,20 @@ body {
 
 /* ===== Navbar ===== */
 .navbar {
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--ink-900);
     border-bottom: 3px solid var(--brand-500);
     padding: 12px 24px;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    box-shadow: 0 2px 6px rgba(124, 45, 18, 0.08);
+    box-shadow: var(--shadow-nav);
 }
 
 .nav-brand {
     font-size: 1.4rem;
     font-weight: 600;
-    color: var(--brand-700);
+    color: var(--accent-text);
     text-decoration: none;
 }
 
@@ -72,13 +134,13 @@ body {
 }
 
 .logout-btn {
-    color: var(--brand-700);
+    color: var(--accent-text);
     background-color: transparent;
     border: 1px solid var(--brand-300);
 }
 
 .logout-btn:hover {
-    background-color: var(--brand-050);
+    background-color: var(--hover-bg);
 }
 
 .login-btn {
@@ -105,15 +167,15 @@ body {
 }
 
 .flash-success {
-    background-color: #ECFDF5;
-    color: #047857;
-    border: 1px solid #A7F3D0;
+    background-color: var(--flash-success-bg);
+    color: var(--flash-success-fg);
+    border: 1px solid var(--flash-success-border);
 }
 
 .flash-error {
-    background-color: #FEF2F2;
-    color: #B91C1C;
-    border: 1px solid #FECACA;
+    background-color: var(--flash-error-bg);
+    color: var(--flash-error-fg);
+    border: 1px solid var(--flash-error-border);
 }
 
 /* ===== Container ===== */
@@ -132,18 +194,18 @@ body {
 }
 
 .login-card {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--line);
     padding: 40px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(124, 45, 18, 0.10);
+    box-shadow: var(--shadow-card-lg);
     width: 100%;
     max-width: 400px;
 }
 
 .login-card h1 {
     text-align: center;
-    color: var(--brand-700);
+    color: var(--accent-text);
     margin-bottom: 8px;
 }
 
@@ -202,7 +264,7 @@ body {
 .form-group select:focus {
     outline: none;
     border-color: var(--brand-600);
-    box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.18);
+    box-shadow: var(--focus-ring);
 }
 
 .form-group textarea {
@@ -230,26 +292,26 @@ body {
 }
 
 .btn-primary {
-    background-color: var(--brand-700);
-    border-color: var(--brand-700);
+    background-color: var(--btn-primary-bg);
+    border-color: var(--btn-primary-bg);
     color: #FFFFFF;
 }
 
 .btn-primary:hover {
-    background-color: var(--brand-800);
-    border-color: var(--brand-800);
+    background-color: var(--btn-primary-hover);
+    border-color: var(--btn-primary-hover);
 }
 
 .btn-secondary {
-    background-color: #FFFFFF;
+    background-color: var(--surface);
     border-color: var(--line);
     color: var(--ink-700);
 }
 
 .btn-secondary:hover {
-    background-color: var(--brand-050);
+    background-color: var(--hover-bg);
     border-color: var(--brand-300);
-    color: var(--brand-700);
+    color: var(--accent-text);
 }
 
 .btn-small {
@@ -259,10 +321,10 @@ body {
 
 /* ===== Dashboard ===== */
 .dashboard {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(124, 45, 18, 0.08);
+    box-shadow: var(--shadow-card);
     padding: 24px;
 }
 
@@ -274,7 +336,7 @@ body {
 }
 
 .dashboard-header h1 {
-    color: var(--brand-700);
+    color: var(--accent-text);
     font-size: 1.5rem;
 }
 
@@ -303,7 +365,7 @@ body {
 }
 
 .ticket-table th {
-    background-color: var(--brand-050);
+    background-color: var(--surface-alt);
     font-weight: 600;
     color: var(--ink-700);
     font-size: 0.85rem;
@@ -312,7 +374,7 @@ body {
 }
 
 .ticket-table tbody tr:hover {
-    background-color: var(--brand-050);
+    background-color: var(--hover-bg);
 }
 
 /* ===== Status Badges ===== */
@@ -328,18 +390,18 @@ body {
 
 /* Neutral hue: "Abierto" must not compete with the orange brand accents. */
 .status-open {
-    background-color: #F1F5F9;
-    color: #334155;
+    background-color: var(--open-bg);
+    color: var(--open-fg);
 }
 
 .status-in_progress {
-    background-color: #EFF6FF;
-    color: #1D4ED8;
+    background-color: var(--progress-bg);
+    color: var(--progress-fg);
 }
 
 .status-finished {
-    background-color: #ECFDF5;
-    color: #047857;
+    background-color: var(--finished-bg);
+    color: var(--finished-fg);
 }
 
 /* ===== Role Badges ===== */
@@ -354,13 +416,13 @@ body {
 }
 
 .role-it {
-    background-color: var(--brand-100);
-    color: var(--brand-800);
+    background-color: var(--role-it-bg);
+    color: var(--role-it-fg);
 }
 
 .role-user {
-    background-color: #F1F5F9;
-    color: #334155;
+    background-color: var(--open-bg);
+    color: var(--open-fg);
 }
 
 /* ===== Empty State ===== */
@@ -384,17 +446,17 @@ body {
 }
 
 .form-card {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--line);
     padding: 32px;
     border-radius: 8px;
-    box-shadow: 0 4px 12px rgba(124, 45, 18, 0.10);
+    box-shadow: var(--shadow-card-lg);
     width: 100%;
     max-width: 600px;
 }
 
 .form-card h1 {
-    color: var(--brand-700);
+    color: var(--accent-text);
     margin-bottom: 8px;
 }
 
@@ -406,10 +468,10 @@ body {
 
 /* ===== Ticket Detail ===== */
 .ticket-detail {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--line);
     border-radius: 8px;
-    box-shadow: 0 2px 8px rgba(124, 45, 18, 0.08);
+    box-shadow: var(--shadow-card);
     padding: 24px;
 }
 
@@ -423,12 +485,12 @@ body {
 }
 
 .ticket-header h1 {
-    color: var(--brand-700);
+    color: var(--accent-text);
     font-size: 1.4rem;
 }
 
 .ticket-info {
-    background-color: var(--brand-050);
+    background-color: var(--surface-alt);
     padding: 16px;
     border-radius: 6px;
     margin-bottom: 20px;
@@ -455,7 +517,7 @@ body {
 }
 
 .ticket-actions {
-    background-color: var(--brand-050);
+    background-color: var(--surface-alt);
     padding: 16px;
     border-radius: 6px;
     margin-bottom: 20px;
@@ -491,7 +553,7 @@ body {
 }
 
 .modal-content {
-    background: #FFFFFF;
+    background: var(--surface);
     border: 1px solid var(--line);
     padding: 28px;
     border-radius: 8px;
@@ -523,8 +585,8 @@ body {
     position: absolute;
     left: -9999px;
     top: 0;
-    background: #FFFFFF;
-    color: var(--brand-700);
+    background: var(--surface);
+    color: var(--accent-text);
     padding: 8px 16px;
     border: 2px solid var(--brand-600);
     border-radius: 0 0 4px 0;
@@ -546,7 +608,7 @@ body {
 
 .stat-card {
     flex: 1 1 140px;
-    background: var(--brand-050);
+    background: var(--surface-alt);
     border: 1px solid var(--line);
     border-radius: 8px;
     padding: 14px;
@@ -558,19 +620,19 @@ body {
 
 .stat-card:hover {
     border-color: var(--brand-300);
-    background: var(--brand-100);
+    background: var(--active-tint);
 }
 
 .stat-card.active {
     border-color: var(--brand-600);
-    background: var(--brand-100);
+    background: var(--active-tint);
 }
 
 .stat-value {
     display: block;
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--brand-700);
+    color: var(--accent-text);
 }
 
 .stat-label {
@@ -601,7 +663,7 @@ body {
     border: 1px solid var(--line);
     border-radius: 4px;
     font-size: 0.9rem;
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--ink-900);
 }
 
@@ -613,7 +675,7 @@ body {
 .filter-bar input[type="search"]:focus {
     outline: none;
     border-color: var(--brand-600);
-    box-shadow: 0 0 0 2px rgba(194, 65, 12, 0.18);
+    box-shadow: var(--focus-ring);
 }
 
 /* ===== Pagination ===== */
@@ -647,18 +709,18 @@ body {
 }
 
 .prio-low {
-    background-color: #F1F5F9;
-    color: #334155;
+    background-color: var(--open-bg);
+    color: var(--open-fg);
 }
 
 .prio-medium {
-    background-color: #FEF3C7;
-    color: #92400E;
+    background-color: var(--prio-medium-bg);
+    color: var(--prio-medium-fg);
 }
 
 .prio-high {
-    background-color: #FEF2F2;
-    color: #B91C1C;
+    background-color: var(--prio-high-bg);
+    color: var(--prio-high-fg);
 }
 
 /* ===== Category Chip ===== */
@@ -691,7 +753,7 @@ body {
     border: 1px solid var(--line);
     border-radius: 4px;
     font-size: 0.9rem;
-    background: #FFFFFF;
+    background: var(--surface);
     color: var(--ink-900);
 }
 
@@ -769,5 +831,48 @@ body {
     .dashboard-actions .btn {
         width: 100%;
         text-align: center;
+    }
+}
+
+/* ===== Print (light, chrome-free — meant for the ticket detail) ===== */
+@media print {
+    .navbar,
+    .flash-messages,
+    .skip-link,
+    .filter-bar,
+    .stats-grid,
+    .pagination,
+    .dashboard-actions,
+    .ticket-actions,
+    .owner-actions,
+    .thread form,
+    .back-link {
+        display: none !important;
+    }
+
+    body {
+        background: #FFFFFF;
+        color: #000000;
+    }
+
+    .container {
+        max-width: none;
+        padding: 0;
+    }
+
+    .ticket-detail,
+    .dashboard,
+    .form-card,
+    .login-card,
+    .comment {
+        box-shadow: none;
+        border: 1px solid #D4D4D4;
+    }
+
+    .status-badge,
+    .prio-badge,
+    .cat-chip {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }

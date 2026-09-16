@@ -1,11 +1,11 @@
 {% extends "base.html" %}
-{% block title %}Gestión de usuarios - Sistema de Tickets de TI{% endblock %}
+{% block title %}Gestión de usuarios - Sistema de Tickets de IT{% endblock %}
 
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
         <h1>Gestión de usuarios</h1>
-        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Volver al panel de TI</a>
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Volver al panel de IT</a>
     </div>
 
     <!-- Formulario: crear nuevo usuario -->
@@ -24,7 +24,7 @@
                 <label for="role">Rol</label>
                 <select id="role" name="role">
                     <option value="user">Usuario básico</option>
-                    <option value="it">Usuario de TI</option>
+                    <option value="it">Usuario de IT</option>
                 </select>
             </div>
             <button type="submit" class="btn btn-primary">Crear usuario</button>

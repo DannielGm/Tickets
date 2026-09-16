@@ -65,17 +65,16 @@
                 applyTheme('light');
             }
 
-            var btn = document.getElementById('themeToggle');
-            if (btn) {
+            document.addEventListener('DOMContentLoaded', function() {
+                var btn = document.getElementById('themeToggle');
+                if (!btn) return;
+
+                updateToggleIcon(effectiveTheme());
                 btn.addEventListener('click', function() {
                     var cur = effectiveTheme();
-                    if (cur === 'dark') {
-                        applyTheme('light');
-                    } else {
-                        applyTheme('dark');
-                    }
+                    applyTheme(cur === 'dark' ? 'light' : 'dark');
                 });
-            }
+            });
         })();
     </script>
 </head>

@@ -23,9 +23,11 @@ from werkzeug.security import generate_password_hash, check_password_hash
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
-# Use absolute path for the database so it works regardless of CWD
+# Use an absolute path for the database so it works regardless of CWD.
+# TICKETS_DATABASE lets a test run point the app at a throwaway file without
+# touching the default database.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-DATABASE = os.path.join(BASE_DIR, 'database.db')
+DATABASE = os.environ.get('TICKETS_DATABASE') or os.path.join(BASE_DIR, 'database.db')
 
 
 # ---------------------------------------------------------------------------
@@ -45,10 +47,18 @@ def get_db():
     return conn
 
 
-def init_db():
-    """Create tables and seed demo accounts if they don't exist yet."""
-    conn = get_db()
-    conn.executescript('''
+# ---------------------------------------------------------------------------
+# Schema versioning
+# ---------------------------------------------------------------------------
+
+SCHEMA_VERSION = 2
+
+# The schema every database starts from. Keep this frozen: later changes are
+# applied by the migration steps below, never by editing this baseline.
+# CREATE TABLE IF NOT EXISTS is a no-op on an existing database, and re-running
+# an ALTER TABLE ... ADD COLUMN fails with "duplicate column name", so this must
+# stay the lowest common denominator for both new and pre-existing DB files.
+BASELINE_SQL = '''
         CREATE TABLE IF NOT EXISTS users (
             id            INTEGER PRIMARY KEY AUTOINCREMENT,
             username      TEXT    UNIQUE NOT NULL,
@@ -69,9 +79,94 @@ def init_db():
             FOREIGN KEY (created_by)  REFERENCES users (id),
             FOREIGN KEY (assigned_to) REFERENCES users (id)
         );
-    ''')
+    '''
 
-    # Seed demo accounts (only if they don't already exist)
+
+# ---------------------------------------------------------------------------
+# Migration steps
+# ---------------------------------------------------------------------------
+
+def _migrate_to_1(conn):
+    """Add priority/category/resolved_at to tickets and index the hot columns."""
+    conn.execute(
+        "ALTER TABLE tickets ADD COLUMN priority TEXT NOT NULL "
+        "DEFAULT 'medium' CHECK (priority IN ('low', 'medium', 'high'))"
+    )
+    conn.execute(
+        "ALTER TABLE tickets ADD COLUMN category TEXT NOT NULL "
+        "DEFAULT 'other' "
+        "CHECK (category IN ('hardware', 'software', 'network', 'access', 'other'))"
+    )
+    conn.execute('ALTER TABLE tickets ADD COLUMN resolved_at TIMESTAMP')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_tickets_status   ON tickets (status)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_tickets_created  ON tickets (created_at DESC)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_tickets_creator  ON tickets (created_by)')
+    conn.execute('CREATE INDEX IF NOT EXISTS idx_tickets_assignee ON tickets (assigned_to)')
+
+
+def _migrate_to_2(conn):
+    """Create the ticket comment and activity thread."""
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS ticket_comments (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            ticket_id  INTEGER NOT NULL,
+            author_id  INTEGER NOT NULL,
+            body       TEXT,
+            kind       TEXT    NOT NULL DEFAULT 'comment',
+            old_value  TEXT,
+            new_value  TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (ticket_id) REFERENCES tickets (id) ON DELETE CASCADE,
+            FOREIGN KEY (author_id) REFERENCES users (id)
+        )
+    ''')
+    conn.execute(
+        'CREATE INDEX IF NOT EXISTS idx_comments_ticket '
+        'ON ticket_comments (ticket_id, created_at)'
+    )
+
+
+# Ordered migration steps, keyed by the schema version they produce.
+MIGRATIONS = {
+    1: _migrate_to_1,
+    2: _migrate_to_2,
+}
+
+
+def init_db():
+    """Bring the database up to SCHEMA_VERSION, then seed the demo accounts."""
+    conn = get_db()
+    # Take manual control of transactions. Python's sqlite3 only opens one
+    # implicitly for DML, so DDL (ALTER/CREATE) would otherwise run in
+    # autocommit mode and could not be rolled back if a step failed.
+    conn.isolation_level = None
+    try:
+        # Idempotent for existing databases; creates the v0 schema for new ones.
+        conn.executescript(BASELINE_SQL)
+
+        version = conn.execute('PRAGMA user_version').fetchone()[0]
+        for target in sorted(MIGRATIONS):
+            if version >= target:
+                continue
+            # BEGIN IMMEDIATE takes the write lock up front, so two processes
+            # starting at once (e.g. the debug reloader) serialise safely.
+            conn.execute('BEGIN IMMEDIATE')
+            try:
+                MIGRATIONS[target](conn)
+                conn.execute(f'PRAGMA user_version = {target}')
+            except Exception:
+                conn.execute('ROLLBACK')  # step undone, version left unstamped
+                raise                     # fail loudly instead of running broken
+            else:
+                conn.execute('COMMIT')    # step and version stamp land together
+
+        _seed_demo_accounts(conn)
+    finally:
+        conn.close()
+
+
+def _seed_demo_accounts(conn):
+    """Insert the demo accounts, but only if they are not there already."""
     existing = conn.execute('SELECT username FROM users').fetchall()
     existing_usernames = {row['username'] for row in existing}
 
@@ -87,7 +182,6 @@ def init_db():
         )
 
     conn.commit()
-    conn.close()
 
 
 # ---------------------------------------------------------------------------

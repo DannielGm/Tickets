@@ -1,0 +1,19 @@
+Phase 1: versioned SQLite migration framework
+
+- app.py: replace the one-shot init_db() schema creation with a versioned
+  framework. BASELINE_SQL stays frozen at v0 and every database, new or
+  existing, is migrated forward through the same ordered steps, so both paths
+  converge on an identical schema.
+- PRAGMA user_version holds the schema version. Each step runs inside an
+  explicit BEGIN IMMEDIATE/COMMIT (Python's sqlite3 only opens a transaction
+  implicitly for DML, so DDL would otherwise be non-rollbackable) and the
+  version stamp is written in that same transaction, so a failing step leaves
+  the database untouched and the error propagates loudly.
+- Migration 1: add tickets.priority, tickets.category and tickets.resolved_at
+  (NOT NULL + DEFAULT + CHECK) plus four indexes.
+- Migration 2: add the ticket_comments table for the comment/activity thread.
+- TICKETS_DATABASE env var can point the app at a different database file.
+- tests/test_migrations.py: 29 checks covering fresh installs, upgrade of a
+  populated v0 database, schema convergence, idempotency, rollback on failure
+  and FK/CHECK/CASCADE behaviour.
+- tests/test_app.py: 26 end-to-end route checks via Flask's test client.

@@ -10,6 +10,43 @@
         </div>
     </div>
 
+    <div class="stats-grid">
+        <a href="{{ url_for('it_dashboard') }}" class="stat-card {% if not f_status %}active{% endif %}">
+            <span class="stat-value">{{ stats['total'] }}</span>
+            <span class="stat-label">Total</span>
+        </a>
+        <a href="{{ url_for('it_dashboard', status='open') }}" class="stat-card {% if f_status == 'open' %}active{% endif %}">
+            <span class="stat-value">{{ stats.get('open', 0) }}</span>
+            <span class="stat-label">Abiertos</span>
+        </a>
+        <a href="{{ url_for('it_dashboard', status='in_progress') }}" class="stat-card {% if f_status == 'in_progress' %}active{% endif %}">
+            <span class="stat-value">{{ stats.get('in_progress', 0) }}</span>
+            <span class="stat-label">En progreso</span>
+        </a>
+        <a href="{{ url_for('it_dashboard', status='finished') }}" class="stat-card {% if f_status == 'finished' %}active{% endif %}">
+            <span class="stat-value">{{ stats.get('finished', 0) }}</span>
+            <span class="stat-label">Finalizados</span>
+        </a>
+    </div>
+
+    <form method="get" action="{{ url_for('it_dashboard') }}" class="filter-bar">
+        <label for="f-status">Estado</label>
+        <select id="f-status" name="status" onchange="this.form.submit()">
+            <option value="" {% if not f_status %}selected{% endif %}>Todos</option>
+            <option value="open" {% if f_status == 'open' %}selected{% endif %}>Abierto</option>
+            <option value="in_progress" {% if f_status == 'in_progress' %}selected{% endif %}>En progreso</option>
+            <option value="finished" {% if f_status == 'finished' %}selected{% endif %}>Finalizado</option>
+        </select>
+        <label for="f-sort">Ordenar</label>
+        <select id="f-sort" name="sort" onchange="this.form.submit()">
+            <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Más recientes</option>
+            <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Más antiguos</option>
+            <option value="title" {% if sort == 'title' %}selected{% endif %}>Título A-Z</option>
+        </select>
+        <input type="search" name="q" value="{{ q }}" placeholder="Buscar por título o usuario..." aria-label="Buscar tickets">
+        <noscript><button type="submit" class="btn btn-small btn-secondary">Aplicar</button></noscript>
+    </form>
+
     {% if tickets %}
     <div class="table-wrap">
     <table class="ticket-table">
@@ -39,9 +76,31 @@
         </tbody>
     </table>
     </div>
-    {% else %}
+
+    {% if total_pages > 1 %}
+    <nav class="pagination" aria-label="Paginación">
+        {% if page > 1 %}
+        <a class="btn btn-small btn-secondary" href="{{ url_for('it_dashboard', status=(f_status or None), q=(q or None), sort=(sort if sort != 'newest' else None), page=(page - 1)) }}">Anterior</a>
+        {% else %}
+        <span class="btn btn-small btn-secondary" aria-disabled="true">Anterior</span>
+        {% endif %}
+        <span class="page-info">Página {{ page }} de {{ total_pages }}</span>
+        {% if page < total_pages %}
+        <a class="btn btn-small btn-secondary" href="{{ url_for('it_dashboard', status=(f_status or None), q=(q or None), sort=(sort if sort != 'newest' else None), page=(page + 1)) }}">Siguiente</a>
+        {% else %}
+        <span class="btn btn-small btn-secondary" aria-disabled="true">Siguiente</span>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    {% elif not q and not f_status %}
     <div class="empty-state">
         <p>Todavía no se ha enviado ningún ticket.</p>
+    </div>
+    {% else %}
+    <div class="empty-state">
+        <p>Ningún ticket coincide con los filtros aplicados.</p>
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Limpiar filtros</a>
     </div>
     {% endif %}
 </div>

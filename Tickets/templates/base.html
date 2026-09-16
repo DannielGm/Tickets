@@ -8,8 +8,9 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='%23C2410C'/><path d='M5 8h14v2.5a1.5 1.5 0 0 0 0 3V16H5v-2.5a1.5 1.5 0 0 0 0-3z' fill='%23FFF7ED'/></svg>">
 </head>
 <body>
+    <a class="skip-link" href="#contenido">Saltar al contenido</a>
     {% set home_href = url_for('it_dashboard') if session.get('role') == 'it' else (url_for('user_dashboard') if session.get('user_id') else url_for('login')) %}
-    <nav class="navbar">
+    <nav class="navbar" aria-label="Navegación principal">
         <a href="{{ home_href }}" class="nav-brand">Sistema de Tickets de TI</a>
         <div class="nav-user">
             {% if session.get('user_id') %}
@@ -22,7 +23,7 @@
         </div>
     </nav>
 
-    <div class="flash-messages">
+    <div class="flash-messages" aria-live="polite">
         {% with messages = get_flashed_messages(with_categories=true) %}
             {% if messages %}
                 {% for category, message in messages %}
@@ -32,7 +33,7 @@
         {% endwith %}
     </div>
 
-    <main class="container">
+    <main class="container" id="contenido">
         {% block content %}{% endblock %}
     </main>
 </body>

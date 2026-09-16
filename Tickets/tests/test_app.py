@@ -74,6 +74,27 @@ try:
         check('the IT dashboard shows who submitted the ticket', b'user1' in r.data)
         check('the IT dashboard shows the assignee column', b'Asignado a' in r.data)
 
+        # --- IT dashboard listings: filter / search / sort --------------------
+        r = client.get('/it/dashboard')
+        check('the stat cards render on the IT dashboard', b'stats-grid' in r.data)
+
+        r = client.get('/it/dashboard?status=open')
+        check('IT can filter the dashboard by status', b'Printer jam' in r.data)
+
+        r = client.get('/it/dashboard?status=finished')
+        check('an empty filter result shows the filtered empty state (IT)',
+              b'Limpiar filtros' in r.data)
+
+        r = client.get('/it/dashboard?q=user1')
+        check('IT search matches the creator username too', b'Printer jam' in r.data)
+
+        r = client.get('/it/dashboard?q=zzz')
+        check('IT search with no match shows the empty state', b'Limpiar filtros' in r.data)
+
+        r = client.get('/it/dashboard?sort=title')
+        check('sorting by title is accepted',
+              r.status_code == 200 and b'Printer jam' in r.data)
+
         r = client.post('/ticket/1/status', data={'status': 'in_progress'},
                         follow_redirects=True)
         check('IT can move a ticket to in progress',
@@ -120,6 +141,43 @@ try:
 
         r = client.get('/it/users')
         check('a basic user cannot reach user management', r.status_code == 302, str(r.status_code))
+
+        # --- dashboard listings: filter / search / sort / pagination ----------
+        for i in range(1, 12):
+            client.post('/ticket/submit',
+                        data={'title': f'Ticket de prueba {i:02d}', 'description': 'cuerpo'},
+                        follow_redirects=True)
+
+        r = client.get('/user/dashboard')
+        check('the stat cards render on the user dashboard', b'stats-grid' in r.data)
+        check('pagination appears after PER_PAGE tickets',
+              'Página 1 de 2'.encode('utf-8') in r.data)
+        check('page 1 omits the oldest ticket', b'>Ticket de prueba 01<' not in r.data)
+
+        r = client.get('/user/dashboard?page=2')
+        check('page 2 shows the oldest ticket',
+              r.status_code == 200 and b'>Ticket de prueba 01<' in r.data, str(r.status_code))
+
+        r = client.get('/user/dashboard?page=99')
+        check('an out-of-range page is clamped', 'Página 2 de 2'.encode('utf-8') in r.data)
+
+        r = client.get('/user/dashboard?page=abc')
+        check('a non-numeric page is sanitised', 'Página 1 de 2'.encode('utf-8') in r.data)
+
+        r = client.get('/user/dashboard?status=finished')
+        check('an empty filter result shows the filtered empty state',
+              b'Limpiar filtros' in r.data)
+
+        r = client.get('/user/dashboard?status=bogus')
+        check('an invalid status filter is sanitised',
+              r.status_code == 200 and b'>Ticket de prueba 11<' in r.data, str(r.status_code))
+
+        r = client.get('/user/dashboard?q=07')
+        check('search finds the matching ticket',
+              b'>Ticket de prueba 07<' in r.data and b'>Ticket de prueba 11<' not in r.data)
+
+        r = client.get('/user/dashboard?q=%25')
+        check('the percent wildcard is matched literally', b'Limpiar filtros' in r.data)
 
         # --- logout ------------------------------------------------------------
         r = client.get('/logout', follow_redirects=True)

@@ -72,10 +72,10 @@
 </div>
 
 <!-- Modal: restablecer contraseña -->
-<div id="resetModal" class="modal" style="display: none;">
+<div id="resetModal" class="modal" style="display: none;" role="dialog" aria-modal="true" aria-labelledby="resetTitle">
     <div class="modal-content">
-        <span class="close" id="closeModal">&times;</span>
-        <h3>Restablecer contraseña de <span id="resetUsername"></span></h3>
+        <button type="button" class="close" id="closeModal" aria-label="Cerrar">&times;</button>
+        <h3 id="resetTitle" tabindex="-1">Restablecer contraseña de <span id="resetUsername"></span></h3>
         <form id="resetForm" method="POST">
             <div class="form-group">
                 <label for="new_password">Nueva contraseña</label>
@@ -91,6 +91,7 @@ document.addEventListener('DOMContentLoaded', function() {
     var modal = document.getElementById('resetModal');
     var resetForm = document.getElementById('resetForm');
     var resetUsername = document.getElementById('resetUsername');
+    var lastFocused = null;
 
     // Open modal when a reset button is clicked
     document.querySelectorAll('.reset-btn').forEach(function(btn) {
@@ -101,12 +102,17 @@ document.addEventListener('DOMContentLoaded', function() {
             var tpl = "{{ url_for('reset_password', user_id=0) }}";
             resetForm.action = tpl.slice(0, tpl.lastIndexOf('/') + 1) + userId;
             modal.style.display = 'flex';
+            lastFocused = document.activeElement;
+            document.getElementById('new_password').focus();
         });
     });
 
-    // Close modal
+    // Close modal and restore focus to the button that opened it
     function closeModal() {
         modal.style.display = 'none';
+        if (lastFocused) {
+            lastFocused.focus();
+        }
     }
 
     document.getElementById('closeModal').addEventListener('click', closeModal);
@@ -114,6 +120,13 @@ document.addEventListener('DOMContentLoaded', function() {
     // Close when clicking outside the modal
     window.addEventListener('click', function(event) {
         if (event.target === modal) {
+            closeModal();
+        }
+    });
+
+    // Close with the Escape key
+    document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape' && modal.style.display === 'flex') {
             closeModal();
         }
     });

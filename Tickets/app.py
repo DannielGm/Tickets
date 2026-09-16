@@ -313,6 +313,110 @@ def logout():
 
 # --- Basic User Routes -----------------------------------------------------
 
+# --- Dashboard listing helpers (filter / search / sort / pagination) ---------
+
+PER_PAGE = 10
+
+# Whitelisted ORDER BY clauses: the sort parameter never reaches SQL raw.
+SORTS = {
+    'newest': 't.created_at DESC, t.id DESC',
+    'oldest': 't.created_at ASC, t.id ASC',
+    'title':  't.title COLLATE NOCASE ASC, t.id ASC',
+}
+
+
+def _like_pattern(q):
+    """Escape LIKE wildcards so the user's text is matched literally."""
+    return q.replace('\\', '\\\\').replace('%', '\\%').replace('_', '\\_')
+
+
+def _search_clause(columns):
+    """WHERE fragment matching any of the given columns, plus its arity."""
+    clause = ' OR '.join(f"{c} LIKE ? ESCAPE '\\'" for c in columns)
+    return '(' + clause + ')', len(columns)
+
+
+def _parse_dashboard_args():
+    """Read and sanitise the query-string parameters shared by both dashboards."""
+    f_status = request.args.get('status', '').strip() or None
+    if f_status not in STATUS_LABELS:
+        f_status = None
+    q = request.args.get('q', '').strip()
+    sort = request.args.get('sort', 'newest')
+    if sort not in SORTS:
+        sort = 'newest'
+    try:
+        page = max(1, int(request.args.get('page', '1')))
+    except ValueError:
+        page = 1
+    return f_status, q, sort, page
+
+
+def _listing_context(conn, base_where, base_args, search_columns):
+    """Build everything the dashboard templates expect.
+
+    The stat cards count the current search result set but ignore the status
+    filter itself, so they act as a drill-down into the filtered list.
+    """
+    f_status, q, sort, page = _parse_dashboard_args()
+
+    where = list(base_where)
+    args = list(base_args)
+    if q:
+        clause, n = _search_clause(search_columns)
+        # _like_pattern only escapes the user's % _ \ characters; the wildcards
+        # that make LIKE match anywhere in the value are added here.
+        pat = f"%{_like_pattern(q)}%"
+        where.append(clause)
+        args.extend([pat] * n)
+    if f_status:
+        where.append('t.status = ?')
+        args.append(f_status)
+
+    where_sql = ' WHERE ' + ' AND '.join(where) if where else ''
+
+    # Counts for the stat cards: search applied, status filter not.
+    stat_where, stat_args = list(base_where), list(base_args)
+    if q:
+        clause, n = _search_clause(search_columns)
+        stat_where.append(clause)
+        stat_args.extend([f"%{_like_pattern(q)}%"] * n)
+    stat_sql = ' WHERE ' + ' AND '.join(stat_where) if stat_where else ''
+
+    # The joins are needed in every query because the search clause may
+    # reference u.username. users.id is a primary key, so the LEFT JOINs
+    # cannot multiply ticket rows and the counts stay correct.
+    join_sql = (' LEFT JOIN users u  ON t.created_by  = u.id'
+                ' LEFT JOIN users it ON t.assigned_to = it.id')
+
+    stats = {'total': 0}
+    for row in conn.execute(
+        f'SELECT t.status, COUNT(*) AS n FROM tickets t{join_sql}{stat_sql}'
+        ' GROUP BY t.status',
+        stat_args
+    ):
+        stats[row['status']] = row['n']
+        stats['total'] += row['n']
+
+    total = conn.execute(
+        f'SELECT COUNT(*) FROM tickets t{join_sql}{where_sql}', args
+    ).fetchone()[0]
+    total_pages = max(1, (total + PER_PAGE - 1) // PER_PAGE)
+    page = min(page, total_pages)
+
+    tickets = conn.execute(
+        'SELECT t.*, u.username AS creator_name, it.username AS assignee_name'
+        f' FROM tickets t{join_sql}'
+        f'{where_sql} ORDER BY {SORTS[sort]} LIMIT ? OFFSET ?',
+        args + [PER_PAGE, (page - 1) * PER_PAGE]
+    ).fetchall()
+
+    return {
+        'tickets': tickets, 'stats': stats, 'f_status': f_status,
+        'q': q, 'sort': sort, 'page': page, 'total_pages': total_pages,
+    }
+
+
 @app.route('/user/dashboard')
 @login_required
 def user_dashboard():
@@ -321,13 +425,15 @@ def user_dashboard():
         return redirect(url_for('it_dashboard'))
 
     conn = get_db()
-    tickets = conn.execute(
-        'SELECT * FROM tickets WHERE created_by = ? ORDER BY created_at DESC',
-        (session['user_id'],)
-    ).fetchall()
+    ctx = _listing_context(
+        conn,
+        base_where=['t.created_by = ?'],
+        base_args=[session['user_id']],
+        search_columns=['t.title'],
+    )
     conn.close()
 
-    return render_template('user_dashboard.html', tickets=tickets)
+    return render_template('user_dashboard.html', **ctx)
 
 
 @app.route('/ticket/submit', methods=['GET', 'POST'])
@@ -367,18 +473,15 @@ def submit_ticket():
 def it_dashboard():
     """Show all tickets to the IT user."""
     conn = get_db()
-    tickets = conn.execute('''
-        SELECT t.*,
-               u.username  AS creator_name,
-               it.username AS assignee_name
-        FROM tickets t
-        LEFT JOIN users u  ON t.created_by  = u.id
-        LEFT JOIN users it ON t.assigned_to = it.id
-        ORDER BY t.created_at DESC
-    ''').fetchall()
+    ctx = _listing_context(
+        conn,
+        base_where=[],
+        base_args=[],
+        search_columns=['t.title', 'u.username'],
+    )
     conn.close()
 
-    return render_template('it_dashboard.html', tickets=tickets)
+    return render_template('it_dashboard.html', **ctx)
 
 
 @app.route('/ticket/<int:ticket_id>')

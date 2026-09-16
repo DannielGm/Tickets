@@ -44,6 +44,7 @@ body {
     font-size: 1.4rem;
     font-weight: 600;
     color: var(--brand-700);
+    text-decoration: none;
 }
 
 .nav-user {
@@ -278,8 +279,13 @@ body {
 }
 
 /* ===== Tables ===== */
+.table-wrap {
+    overflow-x: auto;
+}
+
 .ticket-table {
     width: 100%;
+    min-width: 560px;
     border-collapse: collapse;
     margin-top: 16px;
 }
@@ -523,7 +529,8 @@ body {
         flex-direction: column;
     }
 
-    .btn {
+    .form-actions .btn,
+    .dashboard-actions .btn {
         width: 100%;
         text-align: center;
     }

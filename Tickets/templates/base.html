@@ -5,10 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}Sistema de Tickets de TI{% endblock %}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'><rect width='24' height='24' rx='5' fill='%23C2410C'/><path d='M5 8h14v2.5a1.5 1.5 0 0 0 0 3V16H5v-2.5a1.5 1.5 0 0 0 0-3z' fill='%23FFF7ED'/></svg>">
 </head>
 <body>
+    {% set home_href = url_for('it_dashboard') if session.get('role') == 'it' else (url_for('user_dashboard') if session.get('user_id') else url_for('login')) %}
     <nav class="navbar">
-        <div class="nav-brand">Sistema de Tickets de TI</div>
+        <a href="{{ home_href }}" class="nav-brand">Sistema de Tickets de TI</a>
         <div class="nav-user">
             {% if session.get('user_id') %}
                 Sesión iniciada como <strong>{{ session.get('username') }}</strong>

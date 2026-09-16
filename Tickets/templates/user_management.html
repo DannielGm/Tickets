@@ -34,6 +34,7 @@
     <!-- Lista de usuarios -->
     <h2>Usuarios existentes</h2>
     {% if users %}
+    <div class="table-wrap">
     <table class="ticket-table">
         <thead>
             <tr>
@@ -62,6 +63,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <p>No se encontraron usuarios.</p>
@@ -96,8 +98,9 @@ document.addEventListener('DOMContentLoaded', function() {
             var userId = this.getAttribute('data-user-id');
             var username = this.getAttribute('data-username');
             resetUsername.textContent = username;
-            resetForm.action = '/it/users/reset_password/' + userId;
-            modal.style.display = 'block';
+            var tpl = "{{ url_for('reset_password', user_id=0) }}";
+            resetForm.action = tpl.slice(0, tpl.lastIndexOf('/') + 1) + userId;
+            modal.style.display = 'flex';
         });
     });
 

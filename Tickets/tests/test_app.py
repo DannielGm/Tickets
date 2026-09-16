@@ -72,6 +72,7 @@ try:
                         follow_redirects=True)
         check('IT user can log in', r.status_code == 200 and b'Printer jam' in r.data)
         check('the IT dashboard shows who submitted the ticket', b'user1' in r.data)
+        check('the IT dashboard shows the assignee column', b'Asignado a' in r.data)
 
         r = client.post('/ticket/1/status', data={'status': 'in_progress'},
                         follow_redirects=True)

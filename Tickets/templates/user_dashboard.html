@@ -9,6 +9,7 @@
     </div>
 
     {% if tickets %}
+    <div class="table-wrap">
     <table class="ticket-table">
         <thead>
             <tr>
@@ -31,6 +32,7 @@
             {% endfor %}
         </tbody>
     </table>
+    </div>
     {% else %}
     <div class="empty-state">
         <p>Aún no ha enviado ningún ticket.</p>

@@ -368,9 +368,12 @@ def it_dashboard():
     """Show all tickets to the IT user."""
     conn = get_db()
     tickets = conn.execute('''
-        SELECT t.*, u.username AS creator_name
+        SELECT t.*,
+               u.username  AS creator_name,
+               it.username AS assignee_name
         FROM tickets t
-        LEFT JOIN users u ON t.created_by = u.id
+        LEFT JOIN users u  ON t.created_by  = u.id
+        LEFT JOIN users it ON t.assigned_to = it.id
         ORDER BY t.created_at DESC
     ''').fetchall()
     conn.close()

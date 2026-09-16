@@ -144,7 +144,9 @@
     --ink-500: #6B7280;
     --ink-300: #9CA3AF;
 
-        --accent-text: #C2410C;
+    --input-bg: var(--brand-050);
+    --input-fg: var(--ink-700);
+    --accent-text: #C2410C;
 
     --open-bg: rgba(251, 146, 60, 0.10);
     --open-fg: #9A3412;
@@ -386,7 +388,17 @@ body {
     border: 1px solid var(--line);
     border-radius: 4px;
     font-size: 0.95rem;
+    background-color: var(--input-bg, var(--surface));
+    color: var(--input-fg, var(--ink-900));
     transition: border-color 0.2s;
+}
+
+[data-theme="light"] .form-group input[type="text"],
+[data-theme="light"] .form-group input[type="password"],
+[data-theme="light"] .form-group textarea,
+[data-theme="light"] .form-group select {
+    background-color: var(--brand-050);
+    color: var(--ink-700);
 }
 
 .form-group input[type="text"]:focus,
@@ -797,6 +809,12 @@ body {
     color: var(--ink-900);
 }
 
+[data-theme="light"] .filter-bar select,
+[data-theme="light"] .filter-bar input[type="search"] {
+    background: var(--brand-050);
+    color: var(--ink-700);
+}
+
 .filter-bar input[type="search"] {
     flex: 1 1 220px;
 }
@@ -885,6 +903,11 @@ body {
     font-size: 0.9rem;
     background: var(--surface);
     color: var(--ink-900);
+}
+
+[data-theme="light"] .mini-form select {
+    background: var(--brand-050);
+    color: var(--ink-700);
 }
 
 /* ===== Comments & activity thread ===== */

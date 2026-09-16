@@ -90,7 +90,7 @@
         <div class="nav-user">
             {% if session.get('user_id') %}
                 Sesión iniciada como <strong>{{ session.get('username') }}</strong>
-                ({{ session.get('role') | role_label }})
+                <span class="role-badge role-{{ session.get('role') }}">({{ session.get('role') | role_label }})</span>
                 <button type="button" class="theme-toggle" id="themeToggle" aria-label="Usar tema del sistema"></button>
                 <a href="{{ url_for('logout') }}" class="logout-btn">Cerrar sesión</a>
             {% else %}

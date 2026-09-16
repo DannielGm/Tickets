@@ -1,0 +1,9 @@
+# Runtime artifacts produced by start_tickets.bat / stop_tickets.bat
+tickets.pid
+logs/
+__pycache__/
+*.pyc
+*.pyo
+
+# Local dev database (created by app.py on first run)
+database.db

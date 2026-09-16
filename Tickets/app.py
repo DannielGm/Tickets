@@ -12,6 +12,7 @@ Features:
 
 import os
 import sqlite3
+from datetime import datetime
 from functools import wraps
 
 from flask import (
@@ -28,6 +29,53 @@ app.secret_key = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-producti
 # touching the default database.
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 DATABASE = os.environ.get('TICKETS_DATABASE') or os.path.join(BASE_DIR, 'database.db')
+
+
+# ---------------------------------------------------------------------------
+# Presentation helpers
+# ---------------------------------------------------------------------------
+# Stored values stay in English ('open', 'it', ...); only the labels shown to
+# people are translated here. Adding or changing a label therefore never
+# requires a schema migration.
+
+STATUS_LABELS = {
+    'open': 'Abierto',
+    'in_progress': 'En progreso',
+    'finished': 'Finalizado',
+}
+
+ROLE_LABELS = {
+    'user': 'Usuario',
+    'it': 'TI',
+}
+
+
+@app.template_filter('status_label')
+def status_label(value):
+    """Spanish label for a stored ticket status."""
+    return STATUS_LABELS.get(value, value)
+
+
+@app.template_filter('role_label')
+def role_label(value):
+    """Spanish label for a stored user role."""
+    return ROLE_LABELS.get(value, value)
+
+
+@app.template_filter('date_label')
+def date_label(value):
+    """Format a stored timestamp for display in Spanish order.
+
+    SQLite's CURRENT_TIMESTAMP is UTC, so the zone is labelled rather than
+    silently presented as local time.
+    """
+    if not value:
+        return ''
+    try:
+        stamp = datetime.strptime(str(value), '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return str(value)
+    return stamp.strftime('%d/%m/%Y %H:%M') + ' UTC'
 
 
 # ---------------------------------------------------------------------------
@@ -193,7 +241,7 @@ def login_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
-            flash('Please log in to continue.', 'error')
+            flash('Inicie sesión para continuar.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
@@ -204,10 +252,10 @@ def it_required(f):
     @wraps(f)
     def decorated(*args, **kwargs):
         if 'user_id' not in session:
-            flash('Please log in to continue.', 'error')
+            flash('Inicie sesión para continuar.', 'error')
             return redirect(url_for('login'))
         if session.get('role') != 'it':
-            flash('Access denied. IT privileges required.', 'error')
+            flash('Acceso denegado. Se requieren permisos de TI.', 'error')
             return redirect(url_for('user_dashboard'))
         return f(*args, **kwargs)
     return decorated
@@ -246,12 +294,12 @@ def login():
             session['user_id'] = user['id']
             session['username'] = user['username']
             session['role'] = user['role']
-            flash('Logged in successfully.', 'success')
+            flash('Sesión iniciada correctamente.', 'success')
             if user['role'] == 'it':
                 return redirect(url_for('it_dashboard'))
             return redirect(url_for('user_dashboard'))
 
-        flash('Invalid username or password.', 'error')
+        flash('Usuario o contraseña incorrectos.', 'error')
 
     return render_template('login.html')
 
@@ -259,7 +307,7 @@ def login():
 @app.route('/logout')
 def logout():
     session.clear()
-    flash('You have been logged out.', 'success')
+    flash('Ha cerrado sesión.', 'success')
     return redirect(url_for('login'))
 
 
@@ -294,7 +342,7 @@ def submit_ticket():
         description = request.form.get('description', '').strip()
 
         if not title or not description:
-            flash('Title and description are required.', 'error')
+            flash('El título y la descripción son obligatorios.', 'error')
             return render_template('submit_ticket.html')
 
         conn = get_db()
@@ -305,7 +353,7 @@ def submit_ticket():
         conn.commit()
         conn.close()
 
-        flash('Ticket submitted successfully!', 'success')
+        flash('¡Ticket enviado correctamente!', 'success')
         return redirect(url_for('user_dashboard'))
 
     return render_template('submit_ticket.html')
@@ -351,12 +399,12 @@ def ticket_detail(ticket_id):
     conn.close()
 
     if not ticket:
-        flash('Ticket not found.', 'error')
+        flash('Ticket no encontrado.', 'error')
         return redirect(url_for('user_dashboard'))
 
     # Permission check
     if session.get('role') == 'user' and ticket['created_by'] != session['user_id']:
-        flash('Access denied.', 'error')
+        flash('Acceso denegado.', 'error')
         return redirect(url_for('user_dashboard'))
 
     return render_template('ticket_detail.html', ticket=ticket)
@@ -371,7 +419,7 @@ def update_ticket_status(ticket_id):
     valid_statuses = {'open', 'in_progress', 'finished'}
 
     if new_status not in valid_statuses:
-        flash('Invalid status value.', 'error')
+        flash('Estado no válido.', 'error')
         return redirect(url_for('ticket_detail', ticket_id=ticket_id))
 
     conn = get_db()
@@ -381,7 +429,7 @@ def update_ticket_status(ticket_id):
     ).fetchone()
     if not existing:
         conn.close()
-        flash('Ticket not found.', 'error')
+        flash('Ticket no encontrado.', 'error')
         return redirect(url_for('it_dashboard'))
 
     # Optionally assign the ticket to the IT user who is working on it
@@ -396,7 +444,7 @@ def update_ticket_status(ticket_id):
     conn.commit()
     conn.close()
 
-    flash('Ticket status updated.', 'success')
+    flash('Estado del ticket actualizado.', 'success')
     return redirect(url_for('ticket_detail', ticket_id=ticket_id))
 
 
@@ -426,7 +474,7 @@ def create_user():
     role = request.form.get('role', 'user').strip()
 
     if not username or not password:
-        flash('Username and password are required.', 'error')
+        flash('El usuario y la contraseña son obligatorios.', 'error')
         return redirect(url_for('user_management'))
 
     if role not in ('user', 'it'):
@@ -439,9 +487,9 @@ def create_user():
             (username, generate_password_hash(password), role)
         )
         conn.commit()
-        flash(f'User "{username}" created successfully!', 'success')
+        flash(f'¡Usuario "{username}" creado correctamente!', 'success')
     except sqlite3.IntegrityError:
-        flash('That username already exists.', 'error')
+        flash('Ese usuario ya existe.', 'error')
     finally:
         conn.close()
 
@@ -456,7 +504,7 @@ def reset_password(user_id):
     new_password = request.form.get('new_password', '')
 
     if not new_password:
-        flash('New password is required.', 'error')
+        flash('La nueva contraseña es obligatoria.', 'error')
         return redirect(url_for('user_management'))
 
     conn = get_db()
@@ -466,7 +514,7 @@ def reset_password(user_id):
     ).fetchone()
     if not existing:
         conn.close()
-        flash('User not found.', 'error')
+        flash('Usuario no encontrado.', 'error')
         return redirect(url_for('user_management'))
 
     conn.execute(
@@ -476,7 +524,7 @@ def reset_password(user_id):
     conn.commit()
     conn.close()
 
-    flash('Password reset successfully.', 'success')
+    flash('Contraseña restablecida correctamente.', 'success')
     return redirect(url_for('user_management'))
 
 

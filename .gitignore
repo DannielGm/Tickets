@@ -17,6 +17,9 @@ deps_check.txt
 setup_log.txt
 *.log
 
+# ---- Scratch files ----
+_commit_msg.txt
+
 # ---- Editors / OS ----
 .vscode/
 .idea/

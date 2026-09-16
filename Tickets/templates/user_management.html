@@ -1,47 +1,47 @@
 {% extends "base.html" %}
-{% block title %}User Management - IT Ticket System{% endblock %}
+{% block title %}Gestión de usuarios - Sistema de Tickets de TI{% endblock %}
 
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1>User Management</h1>
-        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Back to IT Dashboard</a>
+        <h1>Gestión de usuarios</h1>
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Volver al panel de TI</a>
     </div>
 
-    <!-- Create New User Form -->
+    <!-- Formulario: crear nuevo usuario -->
     <div class="form-card" style="max-width: 500px; margin-bottom: 30px;">
-        <h2>Create New User</h2>
+        <h2>Crear nuevo usuario</h2>
         <form method="POST" action="{{ url_for('create_user') }}">
             <div class="form-group">
-                <label for="username">Username</label>
+                <label for="username">Usuario</label>
                 <input type="text" id="username" name="username" required>
             </div>
             <div class="form-group">
-                <label for="password">Password</label>
+                <label for="password">Contraseña</label>
                 <input type="password" id="password" name="password" required>
             </div>
             <div class="form-group">
-                <label for="role">Role</label>
+                <label for="role">Rol</label>
                 <select id="role" name="role">
-                    <option value="user">Basic User</option>
-                    <option value="it">IT User</option>
+                    <option value="user">Usuario básico</option>
+                    <option value="it">Usuario de TI</option>
                 </select>
             </div>
-            <button type="submit" class="btn btn-primary">Create User</button>
+            <button type="submit" class="btn btn-primary">Crear usuario</button>
         </form>
     </div>
 
-    <!-- User List -->
-    <h2>Existing Users</h2>
+    <!-- Lista de usuarios -->
+    <h2>Usuarios existentes</h2>
     {% if users %}
     <table class="ticket-table">
         <thead>
             <tr>
                 <th>#</th>
-                <th>Username</th>
-                <th>Role</th>
-                <th>Created</th>
-                <th>Actions</th>
+                <th>Usuario</th>
+                <th>Rol</th>
+                <th>Creado</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -49,13 +49,13 @@
             <tr>
                 <td>{{ user['id'] }}</td>
                 <td>{{ user['username'] }}</td>
-                <td><span class="status-badge {% if user['role'] == 'it' %}status-finished{% else %}status-open{% endif %}">{{ user['role'] | title }}</span></td>
-                <td>{{ user['created_at'] }}</td>
+                <td><span class="role-badge role-{{ user['role'] }}">{{ user['role'] | role_label }}</span></td>
+                <td>{{ user['created_at'] | date_label }}</td>
                 <td>
                     <button class="btn btn-small btn-secondary reset-btn"
                             data-user-id="{{ user['id'] }}"
                             data-username="{{ user['username'] }}">
-                        Reset Password
+                        Restablecer contraseña
                     </button>
                 </td>
             </tr>
@@ -64,22 +64,22 @@
     </table>
     {% else %}
     <div class="empty-state">
-        <p>No users found.</p>
+        <p>No se encontraron usuarios.</p>
     </div>
     {% endif %}
 </div>
 
-<!-- Reset Password Modal -->
+<!-- Modal: restablecer contraseña -->
 <div id="resetModal" class="modal" style="display: none;">
     <div class="modal-content">
         <span class="close" id="closeModal">&times;</span>
-        <h3>Reset Password for <span id="resetUsername"></span></h3>
+        <h3>Restablecer contraseña de <span id="resetUsername"></span></h3>
         <form id="resetForm" method="POST">
             <div class="form-group">
-                <label for="new_password">New Password</label>
+                <label for="new_password">Nueva contraseña</label>
                 <input type="password" id="new_password" name="new_password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Reset Password</button>
+            <button type="submit" class="btn btn-primary">Restablecer contraseña</button>
         </form>
     </div>
 </div>

@@ -1,33 +1,33 @@
 {% extends "base.html" %}
-{% block title %}Ticket #{{ ticket['id'] }} - IT Ticket System{% endblock %}
+{% block title %}Ticket #{{ ticket['id'] }} - Sistema de Tickets de TI{% endblock %}
 
 {% block content %}
 <div class="ticket-detail">
     <div class="ticket-header">
         <h1>Ticket #{{ ticket['id'] }}: {{ ticket['title'] }}</h1>
-        <span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | replace('_', ' ') | title }}</span>
+        <span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span>
     </div>
 
     <div class="ticket-info">
-        <p><strong>Submitted By:</strong> {{ ticket['creator_name'] or 'Unknown' }}</p>
-        <p><strong>Assigned To:</strong> {{ ticket['assignee_name'] or 'Unassigned' }}</p>
-        <p><strong>Created:</strong> {{ ticket['created_at'] }}</p>
-        <p><strong>Last Updated:</strong> {{ ticket['updated_at'] }}</p>
+        <p><strong>Enviado por:</strong> {{ ticket['creator_name'] or 'Desconocido' }}</p>
+        <p><strong>Asignado a:</strong> {{ ticket['assignee_name'] or 'Sin asignar' }}</p>
+        <p><strong>Creado:</strong> {{ ticket['created_at'] | date_label }}</p>
+        <p><strong>Última actualización:</strong> {{ ticket['updated_at'] | date_label }}</p>
     </div>
 
     <div class="ticket-description">
-        <h3>Description</h3>
+        <h3>Descripción</h3>
         <p>{{ ticket['description'] }}</p>
     </div>
 
     {% if session.get('role') == 'it' %}
     <div class="ticket-actions">
-        <h3>Update Status</h3>
+        <h3>Actualizar estado</h3>
         <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}">
             <div class="status-selector">
-                <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Open</button>
-                <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">In Progress</button>
-                <button type="submit" name="status" value="finished" class="btn btn-small {% if ticket['status'] == 'finished' %}btn-primary{% else %}btn-secondary{% endif %}">Finished</button>
+                <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Abierto</button>
+                <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">En progreso</button>
+                <button type="submit" name="status" value="finished" class="btn btn-small {% if ticket['status'] == 'finished' %}btn-primary{% else %}btn-secondary{% endif %}">Finalizado</button>
             </div>
         </form>
     </div>
@@ -35,9 +35,9 @@
 
     <div class="back-link">
         {% if session.get('role') == 'it' %}
-        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Back to All Tickets</a>
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Volver a todos los tickets</a>
         {% else %}
-        <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Back to My Tickets</a>
+        <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Volver a mis tickets</a>
         {% endif %}
     </div>
 </div>

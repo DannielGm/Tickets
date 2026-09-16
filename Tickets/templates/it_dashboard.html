@@ -1,12 +1,12 @@
 {% extends "base.html" %}
-{% block title %}IT Dashboard - IT Ticket System{% endblock %}
+{% block title %}Panel de TI - Sistema de Tickets de TI{% endblock %}
 
 {% block content %}
 <div class="dashboard">
     <div class="dashboard-header">
-        <h1>All Tickets</h1>
+        <h1>Todos los tickets</h1>
         <div class="dashboard-actions">
-            <a href="{{ url_for('user_management') }}" class="btn btn-secondary">Manage Users</a>
+            <a href="{{ url_for('user_management') }}" class="btn btn-secondary">Gestionar usuarios</a>
         </div>
     </div>
 
@@ -15,11 +15,11 @@
         <thead>
             <tr>
                 <th>#</th>
-                <th>Title</th>
-                <th>Submitted By</th>
-                <th>Status</th>
-                <th>Created</th>
-                <th>Action</th>
+                <th>Título</th>
+                <th>Enviado por</th>
+                <th>Estado</th>
+                <th>Creado</th>
+                <th>Acción</th>
             </tr>
         </thead>
         <tbody>
@@ -27,17 +27,17 @@
             <tr>
                 <td>{{ ticket['id'] }}</td>
                 <td>{{ ticket['title'] }}</td>
-                <td>{{ ticket['creator_name'] or 'Unknown' }}</td>
-                <td><span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | replace('_', ' ') | title }}</span></td>
-                <td>{{ ticket['created_at'] }}</td>
-                <td><a href="{{ url_for('ticket_detail', ticket_id=ticket['id']) }}" class="btn btn-small btn-secondary">View</a></td>
+                <td>{{ ticket['creator_name'] or 'Desconocido' }}</td>
+                <td><span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span></td>
+                <td>{{ ticket['created_at'] | date_label }}</td>
+                <td><a href="{{ url_for('ticket_detail', ticket_id=ticket['id']) }}" class="btn btn-small btn-secondary">Ver</a></td>
             </tr>
             {% endfor %}
         </tbody>
     </table>
     {% else %}
     <div class="empty-state">
-        <p>No tickets have been submitted yet.</p>
+        <p>Todavía no se ha enviado ningún ticket.</p>
     </div>
     {% endif %}
 </div>

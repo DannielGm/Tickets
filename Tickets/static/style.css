@@ -88,6 +88,7 @@ body {
     background-color: var(--page);
     color: var(--ink-900);
     line-height: 1.6;
+    color-scheme: dark;
 }
 
 :focus-visible {
@@ -875,4 +876,14 @@ body {
         -webkit-print-color-adjust: exact;
         print-color-adjust: exact;
     }
+}
+
+/* ===== Print: remove absolute/fixed positioning artifacts ===== */
+.print-waterfall {
+    position: relative !important;
+    top: auto !important;
+    left: auto !important;
+    right: auto !important;
+    bottom: auto !important;
+    transform: none !important;
 }

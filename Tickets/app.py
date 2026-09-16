@@ -92,6 +92,18 @@ def date_label(value):
     return stamp.strftime('%d/%m/%Y %H:%M') + ' UTC'
 
 
+@app.template_filter('iso_date')
+def iso_date(value):
+    """Return ISO 8601 UTC string for client-side local time conversion."""
+    if not value:
+        return ''
+    try:
+        stamp = datetime.strptime(str(value), '%Y-%m-%d %H:%M:%S')
+    except ValueError:
+        return ''
+    return stamp.isoformat() + 'Z'
+
+
 @app.template_filter('priority_label')
 def priority_label(value):
     """Spanish label for a stored ticket priority."""

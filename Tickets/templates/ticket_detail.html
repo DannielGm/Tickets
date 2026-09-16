@@ -15,10 +15,10 @@
         <p><strong>Enviado por:</strong> {{ ticket['creator_name'] or 'Desconocido' }}</p>
         <p><strong>Asignado a:</strong> {{ ticket['assignee_name'] or 'Sin asignar' }}</p>
         <p><strong>Categoría:</strong> <span class="cat-chip">{{ ticket['category'] | category_label }}</span></p>
-        <p><strong>Creado:</strong> {{ ticket['created_at'] | date_label }}</p>
-        <p><strong>Última actualización:</strong> {{ ticket['updated_at'] | date_label }}</p>
+        <p><strong>Creado:</strong> <time datetime="{{ ticket['created_at'] | iso_date }}">{{ ticket['created_at'] | date_label }}</time></p>
+        <p><strong>Última actualización:</strong> <time datetime="{{ ticket['updated_at'] | iso_date }}">{{ ticket['updated_at'] | date_label }}</time></p>
         {% if ticket['resolved_at'] %}
-        <p><strong>Resuelto:</strong> {{ ticket['resolved_at'] | date_label }}</p>
+        <p><strong>Resuelto:</strong> <time datetime="{{ ticket['resolved_at'] | iso_date }}">{{ ticket['resolved_at'] | date_label }}</time></p>
         {% endif %}
     </div>
 
@@ -72,18 +72,18 @@
         {% for entry in comments %}
             {% if entry['kind'] == 'comment' %}
             <div class="comment">
-                <div class="comment-meta">{{ entry['author_name'] or 'Desconocido' }} · {{ entry['created_at'] | date_label }}</div>
+                <div class="comment-meta">{{ entry['author_name'] or 'Desconocido' }} · <time datetime="{{ entry['created_at'] | iso_date }}">{{ entry['created_at'] | date_label }}</time></div>
                 <div class="comment-body">{{ entry['body'] }}</div>
             </div>
             {% elif entry['kind'] == 'status' %}
             <div class="activity-line">
                 {{ entry['author_name'] or 'Sistema' }} cambió el estado a {{ entry['new_value'] | status_label }}
-                · {{ entry['created_at'] | date_label }}
+                · <time datetime="{{ entry['created_at'] | iso_date }}">{{ entry['created_at'] | date_label }}</time>
             </div>
             {% elif entry['kind'] == 'priority' %}
             <div class="activity-line">
                 {{ entry['author_name'] or 'Sistema' }} cambió la prioridad a {{ entry['new_value'] | priority_label }}
-                · {{ entry['created_at'] | date_label }}
+                · <time datetime="{{ entry['created_at'] | iso_date }}">{{ entry['created_at'] | date_label }}</time>
             </div>
             {% elif entry['kind'] == 'assignment' %}
             <div class="activity-line">
@@ -92,7 +92,7 @@
                 {% else %}
                 {{ entry['author_name'] or 'Sistema' }} quitó la asignación del ticket
                 {% endif %}
-                · {{ entry['created_at'] | date_label }}
+                · <time datetime="{{ entry['created_at'] | iso_date }}">{{ entry['created_at'] | date_label }}</time>
             </div>
             {% endif %}
         {% endfor %}

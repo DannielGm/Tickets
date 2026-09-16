@@ -35,6 +35,14 @@ def no_success_flash(html):
 try:
     app_module.app.config.update(TESTING=True)
 
+    # SQLite timestamps must be explicitly UTC before browser conversion.
+    check('timestamps serialize with an explicit UTC zone',
+          app_module.iso_date('2026-01-01 00:30:00') == '2026-01-01T00:30:00Z')
+    check('empty timestamps remain empty', app_module.iso_date(None) == '')
+    check('invalid timestamps are not converted', app_module.iso_date('invalid') == '')
+    check('no-JavaScript fallback labels UTC honestly',
+          app_module.date_label('2026-01-01 00:30:00') == '01/01/2026 00:30 UTC')
+
     with app_module.app.test_client() as client:
         # --- authentication --------------------------------------------------
         r = client.get('/user/dashboard')

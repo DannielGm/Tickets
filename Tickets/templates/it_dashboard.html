@@ -72,7 +72,7 @@
                 <td>{{ ticket['creator_name'] or 'Desconocido' }}</td>
                 <td>{{ ticket['assignee_name'] or 'Sin asignar' }}</td>
                 <td><span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span></td>
-                <td>{{ ticket['created_at'] | date_label }}</td>
+                <td><time datetime="{{ ticket['created_at'] | iso_date }}">{{ ticket['created_at'] | date_label }}</time></td>
                 <td><a href="{{ url_for('ticket_detail', ticket_id=ticket['id']) }}" class="btn btn-small btn-secondary">Ver</a></td>
             </tr>
             {% endfor %}

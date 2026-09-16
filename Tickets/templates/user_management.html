@@ -51,7 +51,7 @@
                 <td>{{ user['id'] }}</td>
                 <td>{{ user['username'] }}</td>
                 <td><span class="role-badge role-{{ user['role'] }}">{{ user['role'] | role_label }}</span></td>
-                <td>{{ user['created_at'] | date_label }}</td>
+                <td><time datetime="{{ user['created_at'] | iso_date }}">{{ user['created_at'] | date_label }}</time></td>
                 <td>
                     <button class="btn btn-small btn-secondary reset-btn"
                             data-user-id="{{ user['id'] }}"

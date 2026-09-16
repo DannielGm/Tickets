@@ -62,8 +62,7 @@
             if (saved === 'dark' || saved === 'light') {
                 applyTheme(saved);
             } else {
-                root.removeAttribute('data-theme');
-                updateToggleIcon(null);
+                applyTheme('light');
             }
 
             var btn = document.getElementById('themeToggle');
@@ -72,10 +71,8 @@
                     var cur = effectiveTheme();
                     if (cur === 'dark') {
                         applyTheme('light');
-                    } else if (cur === 'light') {
-                        applyTheme('dark');
                     } else {
-                        applyTheme(preferredTheme());
+                        applyTheme('dark');
                     }
                 });
             }

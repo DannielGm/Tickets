@@ -1,0 +1,24 @@
+# ---- Python bytecode / caches ----
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+
+# ---- Virtual environments ----
+.venv/
+venv/
+env/
+
+# ---- Local runtime data & generated reports ----
+# The SQLite database is created on first run and holds local data only.
+database.db
+*.db
+deps_check.txt
+setup_log.txt
+*.log
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini

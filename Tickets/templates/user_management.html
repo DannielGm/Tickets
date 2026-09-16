@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}User Management - IT Ticket System{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>User Management</h1>
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Back to IT Dashboard</a>
+    </div>
+
+    <!-- Create New User Form -->
+    <div class="form-card" style="max-width: 500px; margin-bottom: 30px;">
+        <h2>Create New User</h2>
+        <form method="POST" action="{{ url_for('create_user') }}">
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" required>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" required>
+            </div>
+            <div class="form-group">
+                <label for="role">Role</label>
+                <select id="role" name="role">
+                    <option value="user">Basic User</option>
+                    <option value="it">IT User</option>
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary">Create User</button>
+        </form>
+    </div>
+
+    <!-- User List -->
+    <h2>Existing Users</h2>
+    {% if users %}
+    <table class="ticket-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Username</th>
+                <th>Role</th>
+                <th>Created</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for user in users %}
+            <tr>
+                <td>{{ user['id'] }}</td>
+                <td>{{ user['username'] }}</td>
+                <td><span class="status-badge {% if user['role'] == 'it' %}status-finished{% else %}status-open{% endif %}">{{ user['role'] | title }}</span></td>
+                <td>{{ user['created_at'] }}</td>
+                <td>
+                    <button class="btn btn-small btn-secondary reset-btn"
+                            data-user-id="{{ user['id'] }}"
+                            data-username="{{ user['username'] }}">
+                        Reset Password
+                    </button>
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No users found.</p>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Reset Password Modal -->
+<div id="resetModal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close" id="closeModal">&times;</span>
+        <h3>Reset Password for <span id="resetUsername"></span></h3>
+        <form id="resetForm" method="POST">
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Reset Password</button>
+        </form>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    var modal = document.getElementById('resetModal');
+    var resetForm = document.getElementById('resetForm');
+    var resetUsername = document.getElementById('resetUsername');
+
+    // Open modal when a reset button is clicked
+    document.querySelectorAll('.reset-btn').forEach(function(btn) {
+        btn.addEventListener('click', function() {
+            var userId = this.getAttribute('data-user-id');
+            var username = this.getAttribute('data-username');
+            resetUsername.textContent = username;
+            resetForm.action = '/it/users/reset_password/' + userId;
+            modal.style.display = 'block';
+        });
+    });
+
+    // Close modal
+    function closeModal() {
+        modal.style.display = 'none';
+    }
+
+    document.getElementById('closeModal').addEventListener('click', closeModal);
+
+    // Close when clicking outside the modal
+    window.addEventListener('click', function(event) {
+        if (event.target === modal) {
+            closeModal();
+        }
+    });
+});
+</script>
+{% endblock %}

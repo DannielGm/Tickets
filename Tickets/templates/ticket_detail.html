@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Ticket #{{ ticket['id'] }} - IT Ticket System{% endblock %}
+
+{% block content %}
+<div class="ticket-detail">
+    <div class="ticket-header">
+        <h1>Ticket #{{ ticket['id'] }}: {{ ticket['title'] }}</h1>
+        <span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | replace('_', ' ') | title }}</span>
+    </div>
+
+    <div class="ticket-info">
+        <p><strong>Submitted By:</strong> {{ ticket['creator_name'] or 'Unknown' }}</p>
+        <p><strong>Assigned To:</strong> {{ ticket['assignee_name'] or 'Unassigned' }}</p>
+        <p><strong>Created:</strong> {{ ticket['created_at'] }}</p>
+        <p><strong>Last Updated:</strong> {{ ticket['updated_at'] }}</p>
+    </div>
+
+    <div class="ticket-description">
+        <h3>Description</h3>
+        <p>{{ ticket['description'] }}</p>
+    </div>
+
+    {% if session.get('role') == 'it' %}
+    <div class="ticket-actions">
+        <h3>Update Status</h3>
+        <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}">
+            <div class="status-selector">
+                <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Open</button>
+                <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">In Progress</button>
+                <button type="submit" name="status" value="finished" class="btn btn-small {% if ticket['status'] == 'finished' %}btn-primary{% else %}btn-secondary{% endif %}">Finished</button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+    <div class="back-link">
+        {% if session.get('role') == 'it' %}
+        <a href="{{ url_for('it_dashboard') }}" class="btn btn-secondary">Back to All Tickets</a>
+        {% else %}
+        <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Back to My Tickets</a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

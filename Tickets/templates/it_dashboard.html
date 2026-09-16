@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}IT Dashboard - IT Ticket System{% endblock %}
+
+{% block content %}
+<div class="dashboard">
+    <div class="dashboard-header">
+        <h1>All Tickets</h1>
+        <div class="dashboard-actions">
+            <a href="{{ url_for('user_management') }}" class="btn btn-secondary">Manage Users</a>
+        </div>
+    </div>
+
+    {% if tickets %}
+    <table class="ticket-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Title</th>
+                <th>Submitted By</th>
+                <th>Status</th>
+                <th>Created</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for ticket in tickets %}
+            <tr>
+                <td>{{ ticket['id'] }}</td>
+                <td>{{ ticket['title'] }}</td>
+                <td>{{ ticket['creator_name'] or 'Unknown' }}</td>
+                <td><span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | replace('_', ' ') | title }}</span></td>
+                <td>{{ ticket['created_at'] }}</td>
+                <td><a href="{{ url_for('ticket_detail', ticket_id=ticket['id']) }}" class="btn btn-small btn-secondary">View</a></td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <div class="empty-state">
+        <p>No tickets have been submitted yet.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -12,7 +12,7 @@ Features:
 
 import os
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
 
 from flask import (
@@ -49,6 +49,20 @@ ROLE_LABELS = {
     'it': 'TI',
 }
 
+PRIORITIES = {
+    'low': 'Baja',
+    'medium': 'Media',
+    'high': 'Alta',
+}
+
+CATEGORIES = {
+    'hardware': 'Hardware',
+    'software': 'Software',
+    'network': 'Red',
+    'access': 'Accesos',
+    'other': 'Otro',
+}
+
 
 @app.template_filter('status_label')
 def status_label(value):
@@ -76,6 +90,36 @@ def date_label(value):
     except ValueError:
         return str(value)
     return stamp.strftime('%d/%m/%Y %H:%M') + ' UTC'
+
+
+@app.template_filter('priority_label')
+def priority_label(value):
+    """Spanish label for a stored ticket priority."""
+    return PRIORITIES.get(value, value)
+
+
+@app.template_filter('category_label')
+def category_label(value):
+    """Spanish label for a stored ticket category."""
+    return CATEGORIES.get(value, value)
+
+
+def _log_activity(conn, ticket_id, author_id, kind, old_value, new_value):
+    """Append an entry to the ticket's activity thread."""
+    conn.execute(
+        'INSERT INTO ticket_comments'
+        ' (ticket_id, author_id, body, kind, old_value, new_value)'
+        ' VALUES (?, ?, NULL, ?, ?, ?)',
+        (ticket_id, author_id, kind, old_value, new_value)
+    )
+
+
+def _username(conn, user_id):
+    """Resolve a user id to a username for the activity log (or None)."""
+    if user_id is None:
+        return None
+    row = conn.execute('SELECT username FROM users WHERE id = ?', (user_id,)).fetchone()
+    return row['username'] if row else None
 
 
 # ---------------------------------------------------------------------------
@@ -322,6 +366,7 @@ SORTS = {
     'newest': 't.created_at DESC, t.id DESC',
     'oldest': 't.created_at ASC, t.id ASC',
     'title':  't.title COLLATE NOCASE ASC, t.id ASC',
+    'priority': "CASE t.priority WHEN 'high' THEN 0 WHEN 'medium' THEN 1 ELSE 2 END, t.created_at DESC, t.id DESC",
 }
 
 
@@ -446,15 +491,26 @@ def submit_ticket():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
+        priority = request.form.get('priority', '').strip() or 'medium'
+        category = request.form.get('category', '').strip() or 'other'
 
         if not title or not description:
             flash('El título y la descripción son obligatorios.', 'error')
             return render_template('submit_ticket.html')
 
+        if priority not in PRIORITIES:
+            flash('Prioridad no válida.', 'error')
+            return render_template('submit_ticket.html')
+
+        if category not in CATEGORIES:
+            flash('Categoría no válida.', 'error')
+            return render_template('submit_ticket.html')
+
         conn = get_db()
         conn.execute(
-            'INSERT INTO tickets (title, description, created_by) VALUES (?, ?, ?)',
-            (title, description, session['user_id'])
+            'INSERT INTO tickets (title, description, priority, category, created_by)'
+            ' VALUES (?, ?, ?, ?, ?)',
+            (title, description, priority, category, session['user_id'])
         )
         conn.commit()
         conn.close()
@@ -502,25 +558,47 @@ def ticket_detail(ticket_id):
         LEFT JOIN users it ON t.assigned_to = it.id
         WHERE t.id = ?
     ''', (ticket_id,)).fetchone()
-    conn.close()
 
     if not ticket:
+        conn.close()
         flash('Ticket no encontrado.', 'error')
         return redirect(url_for('user_dashboard'))
 
     # Permission check
     if session.get('role') == 'user' and ticket['created_by'] != session['user_id']:
+        conn.close()
         flash('Acceso denegado.', 'error')
         return redirect(url_for('user_dashboard'))
 
-    return render_template('ticket_detail.html', ticket=ticket)
+    comments = conn.execute(
+        '''SELECT c.*, u.username AS author_name
+           FROM ticket_comments c
+           LEFT JOIN users u ON c.author_id = u.id
+           WHERE c.ticket_id = ?
+           ORDER BY c.created_at ASC, c.id ASC''', (ticket_id,)
+    ).fetchall()
+    it_users = conn.execute(
+        "SELECT id, username FROM users WHERE role = 'it' ORDER BY username"
+    ).fetchall()
+    conn.close()
+
+    return render_template('ticket_detail.html', ticket=ticket,
+                           comments=comments, it_users=it_users,
+                           priorities=PRIORITIES,
+                           is_owner=session.get('user_id') == ticket['created_by'])
 
 
 @app.route('/ticket/<int:ticket_id>/status', methods=['POST'])
 @login_required
-@it_required
 def update_ticket_status(ticket_id):
-    """IT user updates the status of a ticket."""
+    """Change a ticket's status.
+
+    IT users may set any status: they self-assign while working on it and
+    the IT user who closes a ticket becomes its assignee. The owner may
+    only close (finished) and reopen (open) their own ticket, which never
+    changes who is assigned.
+    """
+    is_it = session.get('role') == 'it'
     new_status = request.form.get('status', '').strip()
     valid_statuses = {'open', 'in_progress', 'finished'}
 
@@ -530,27 +608,183 @@ def update_ticket_status(ticket_id):
 
     conn = get_db()
 
-    existing = conn.execute(
-        'SELECT id FROM tickets WHERE id = ?', (ticket_id,)
+    ticket = conn.execute(
+        'SELECT id, status, assigned_to, created_by FROM tickets WHERE id = ?',
+        (ticket_id,)
     ).fetchone()
-    if not existing:
+    if not ticket:
         conn.close()
         flash('Ticket no encontrado.', 'error')
-        return redirect(url_for('it_dashboard'))
+        return redirect(url_for('it_dashboard' if is_it else 'user_dashboard'))
 
-    # Optionally assign the ticket to the IT user who is working on it
+    is_owner = session['user_id'] == ticket['created_by']
+    if not is_it and not is_owner:
+        conn.close()
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('user_dashboard'))
+
+    if not is_it and new_status == 'in_progress':
+        conn.close()
+        flash('No tiene permiso para poner el ticket en progreso.', 'error')
+        return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+    # Assignment rules: the IT user who closes a ticket becomes its
+    # assignee; reopening sends it back to the unassigned queue; an owner
+    # closing keeps the assigned IT user as the contact.
+    if new_status == 'finished' and is_it:
+        assignee = session['user_id']
+    elif new_status == 'open':
+        assignee = None
+    elif new_status == 'in_progress' and is_it:
+        assignee = session['user_id']
+    else:
+        assignee = ticket['assigned_to']
+
+    resolved_at = (datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S')
+                   if new_status == 'finished' else None)
+
     conn.execute(
         '''UPDATE tickets
            SET status = ?,
                assigned_to = ?,
+               resolved_at = ?,
                updated_at = CURRENT_TIMESTAMP
            WHERE id = ?''',
-        (new_status, session['user_id'], ticket_id)
+        (new_status, assignee, resolved_at, ticket_id)
     )
+    _log_activity(conn, ticket_id, session['user_id'], 'status',
+                  ticket['status'], new_status)
+
+    old_assignee = _username(conn, ticket['assigned_to'])
+    new_assignee = _username(conn, assignee)
+    if new_assignee != old_assignee:
+        _log_activity(conn, ticket_id, session['user_id'], 'assignment',
+                      old_assignee, new_assignee)
+
     conn.commit()
     conn.close()
 
     flash('Estado del ticket actualizado.', 'success')
+    return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+
+@app.route('/ticket/<int:ticket_id>/comment', methods=['POST'])
+@login_required
+def add_comment(ticket_id):
+    """The owner or an IT user adds a comment to the ticket thread."""
+    conn = get_db()
+
+    ticket = conn.execute(
+        'SELECT id, created_by FROM tickets WHERE id = ?', (ticket_id,)
+    ).fetchone()
+    if not ticket:
+        conn.close()
+        flash('Ticket no encontrado.', 'error')
+        return redirect(url_for('user_dashboard'))
+
+    if session.get('role') != 'it' and session['user_id'] != ticket['created_by']:
+        conn.close()
+        flash('Acceso denegado.', 'error')
+        return redirect(url_for('user_dashboard'))
+
+    body = request.form.get('body', '').strip()
+    if not body:
+        conn.close()
+        flash('El comentario no puede estar vacío.', 'error')
+        return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+    conn.execute(
+        "INSERT INTO ticket_comments (ticket_id, author_id, body, kind)"
+        " VALUES (?, ?, ?, 'comment')",
+        (ticket_id, session['user_id'], body)
+    )
+    conn.commit()
+    conn.close()
+
+    flash('Comentario publicado.', 'success')
+    return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+
+@app.route('/ticket/<int:ticket_id>/priority', methods=['POST'])
+@login_required
+@it_required
+def update_ticket_priority(ticket_id):
+    """IT user updates the priority of a ticket."""
+    new_priority = request.form.get('priority', '').strip()
+    if new_priority not in PRIORITIES:
+        flash('Prioridad no válida.', 'error')
+        return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+    conn = get_db()
+    ticket = conn.execute(
+        'SELECT id, priority FROM tickets WHERE id = ?', (ticket_id,)
+    ).fetchone()
+    if not ticket:
+        conn.close()
+        flash('Ticket no encontrado.', 'error')
+        return redirect(url_for('it_dashboard'))
+
+    conn.execute(
+        'UPDATE tickets SET priority = ?, updated_at = CURRENT_TIMESTAMP'
+        ' WHERE id = ?',
+        (new_priority, ticket_id)
+    )
+    _log_activity(conn, ticket_id, session['user_id'], 'priority',
+                  ticket['priority'], new_priority)
+    conn.commit()
+    conn.close()
+
+    flash('Prioridad actualizada.', 'success')
+    return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+
+@app.route('/ticket/<int:ticket_id>/assign', methods=['POST'])
+@login_required
+@it_required
+def assign_ticket(ticket_id):
+    """IT user assigns the ticket to an IT user, or clears the assignment."""
+    raw = request.form.get('assignee_id', '').strip()
+
+    conn = get_db()
+    ticket = conn.execute(
+        'SELECT id, assigned_to FROM tickets WHERE id = ?', (ticket_id,)
+    ).fetchone()
+    if not ticket:
+        conn.close()
+        flash('Ticket no encontrado.', 'error')
+        return redirect(url_for('it_dashboard'))
+
+    assignee = None
+    if raw:
+        try:
+            assignee = int(raw)
+        except ValueError:
+            conn.close()
+            flash('Asignación no válida.', 'error')
+            return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+        target = conn.execute(
+            "SELECT id FROM users WHERE id = ? AND role = 'it'", (assignee,)
+        ).fetchone()
+        if not target:
+            conn.close()
+            flash('Solo se puede asignar a un usuario de TI.', 'error')
+            return redirect(url_for('ticket_detail', ticket_id=ticket_id))
+
+    conn.execute(
+        'UPDATE tickets SET assigned_to = ?, updated_at = CURRENT_TIMESTAMP'
+        ' WHERE id = ?',
+        (assignee, ticket_id)
+    )
+
+    old_name = _username(conn, ticket['assigned_to'])
+    new_name = _username(conn, assignee)
+    if new_name != old_name:
+        _log_activity(conn, ticket_id, session['user_id'], 'assignment',
+                      old_name, new_name)
+    conn.commit()
+    conn.close()
+
+    flash('Asignación actualizada.', 'success')
     return redirect(url_for('ticket_detail', ticket_id=ticket_id))
 
 

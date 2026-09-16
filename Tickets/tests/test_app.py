@@ -61,7 +61,8 @@ try:
         r = client.get('/ticket/1')
         check('the owner can open their ticket',
               r.status_code == 200 and b'status-badge' in r.data, str(r.status_code))
-        check('no status controls are offered to a basic user', b'status-selector' not in r.data)
+        check('the owner sees close/reopen controls, not IT controls',
+              b'Cerrar ticket' in r.data and b'name="assignee_id"' not in r.data)
 
         # --- role separation --------------------------------------------------
         r = client.get('/it/dashboard')
@@ -95,10 +96,50 @@ try:
         check('sorting by title is accepted',
               r.status_code == 200 and b'Printer jam' in r.data)
 
+        r = client.get('/it/dashboard?sort=priority')
+        check('sorting by priority is accepted', r.status_code == 200, str(r.status_code))
+
+        r = client.get('/it/dashboard')
+        check('the IT dashboard shows priority badges', b'prio-badge' in r.data)
+
         r = client.post('/ticket/1/status', data={'status': 'in_progress'},
                         follow_redirects=True)
         check('IT can move a ticket to in progress',
               b'status-in_progress' in r.data and b'flash-success' in r.data)
+
+        # --- Phase 5: priority, assignment, closer rule -----------------------
+        r = client.post('/ticket/1/priority', data={'priority': 'high'},
+                        follow_redirects=True)
+        check('IT can change the priority',
+              b'prio-high' in r.data and b'flash-success' in r.data)
+        check('the priority change is logged', 'cambió la prioridad'.encode('utf-8') in r.data)
+
+        r = client.post('/it/users/create',
+                        data={'username': 'it2', 'password': 'pw222222', 'role': 'it'},
+                        follow_redirects=True)
+        check('IT can create another IT user', b'it2' in r.data)
+
+        r = client.post('/ticket/1/assign', data={'assignee_id': '999999'},
+                        follow_redirects=True)
+        check('assigning a non-IT user is rejected', b'flash-error' in r.data)
+
+        r = client.post('/ticket/1/comment', data={'body': 'revisado por TI'},
+                        follow_redirects=True)
+        check('IT can comment on a ticket',
+              b'flash-success' in r.data and b'revisado por TI' in r.data)
+
+        r = client.post('/ticket/1/comment', data={'body': '   '},
+                        follow_redirects=True)
+        check('an empty comment is rejected', b'flash-error' in r.data)
+
+        client.get('/logout')
+        client.post('/login', data={'username': 'it2', 'password': 'pw222222'})
+        r = client.post('/ticket/1/status', data={'status': 'finished'},
+                        follow_redirects=True)
+        check('the IT user who closes the ticket becomes the assignee',
+              b'status-finished' in r.data and b'it2' in r.data)
+        check('the closer assignment is logged',
+              'asignó el ticket a it2'.encode('utf-8') in r.data)
 
         r = client.post('/ticket/1/status', data={'status': 'bogus'}, follow_redirects=True)
         check('an invalid status value is rejected', b'flash-error' in r.data)
@@ -142,6 +183,11 @@ try:
         r = client.get('/it/users')
         check('a basic user cannot reach user management', r.status_code == 302, str(r.status_code))
 
+        r = client.post('/ticket/1/comment', data={'body': 'intruso'},
+                        follow_redirects=True)
+        check('another basic user cannot comment on someone else\'s ticket',
+              b'Acceso denegado' in r.data)
+
         # --- dashboard listings: filter / search / sort / pagination ----------
         for i in range(1, 12):
             client.post('/ticket/submit',
@@ -164,6 +210,15 @@ try:
         r = client.get('/user/dashboard?page=abc')
         check('a non-numeric page is sanitised', 'Página 1 de 2'.encode('utf-8') in r.data)
 
+        conn = app_module.get_db()
+        first_id = conn.execute(
+            "SELECT id FROM tickets WHERE title = 'Ticket de prueba 01'").fetchone()[0]
+        conn.close()
+
+        r = client.get(f'/ticket/{first_id}')
+        check('a ticket submitted without priority defaults to medium',
+              b'prio-medium' in r.data)
+
         r = client.get('/user/dashboard?status=finished')
         check('an empty filter result shows the filtered empty state',
               b'Limpiar filtros' in r.data)
@@ -178,6 +233,59 @@ try:
 
         r = client.get('/user/dashboard?q=%25')
         check('the percent wildcard is matched literally', b'Limpiar filtros' in r.data)
+
+        # --- owner: comments, close/reopen, priority defaults ------------------
+        client.get('/logout')
+        client.post('/login', data={'username': 'user1', 'password': 'password123'})
+
+        r = client.get('/ticket/1')
+        check('the IT-set priority persists on the detail page', b'prio-high' in r.data)
+
+        r = client.post('/ticket/1/comment',
+                        data={'body': 'hola desde el dueño'}, follow_redirects=True)
+        check('the owner can comment on their ticket',
+              b'flash-success' in r.data and 'hola desde el dueño'.encode('utf-8') in r.data)
+
+        r = client.post('/ticket/1/comment', data={'body': '   '},
+                        follow_redirects=True)
+        check('an empty comment is rejected (owner)', b'flash-error' in r.data)
+
+        r = client.post('/ticket/1/status', data={'status': 'in_progress'},
+                        follow_redirects=True)
+        check('the owner cannot set the ticket in progress', b'flash-error' in r.data)
+
+        r = client.post('/ticket/1/status', data={'status': 'open'},
+                        follow_redirects=True)
+        check('the owner can reopen their ticket',
+              b'status-open' in r.data and b'Sin asignar' in r.data)
+        check('reopening clears the assignment in the log',
+              'quitó la asignación'.encode('utf-8') in r.data)
+
+        r = client.post('/ticket/1/status', data={'status': 'finished'},
+                        follow_redirects=True)
+        check('the owner can close their ticket', b'status-finished' in r.data)
+        check('an owner-closed ticket keeps no assignee', b'Sin asignar' in r.data)
+
+        r = client.post('/ticket/submit',
+                        data={'title': 'Impresora rota', 'description': 'no imprime',
+                              'priority': 'high', 'category': 'network'},
+                        follow_redirects=True)
+        check('submitting with priority and category works',
+              b'flash-success' in r.data)
+
+        conn = app_module.get_db()
+        broken_id = conn.execute(
+            "SELECT id FROM tickets WHERE title = 'Impresora rota'").fetchone()[0]
+        conn.close()
+        r = client.get(f'/ticket/{broken_id}')
+        check('the submitted priority and category render on the detail',
+              b'prio-high' in r.data and b'Red' in r.data and b'cat-chip' in r.data)
+
+        r = client.post('/ticket/submit',
+                        data={'title': 'Prioridad rara', 'description': 'x',
+                              'priority': 'bogus', 'category': 'other'},
+                        follow_redirects=True)
+        check('an invalid priority is rejected', b'flash-error' in r.data)
 
         # --- logout ------------------------------------------------------------
         r = client.get('/logout', follow_redirects=True)

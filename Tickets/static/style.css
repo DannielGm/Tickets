@@ -635,6 +635,107 @@ body {
     cursor: default;
 }
 
+/* ===== Priority Badges ===== */
+.prio-badge {
+    display: inline-block;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.prio-low {
+    background-color: #F1F5F9;
+    color: #334155;
+}
+
+.prio-medium {
+    background-color: #FEF3C7;
+    color: #92400E;
+}
+
+.prio-high {
+    background-color: #FEF2F2;
+    color: #B91C1C;
+}
+
+/* ===== Category Chip ===== */
+.cat-chip {
+    display: inline-block;
+    padding: 2px 10px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    font-size: 0.75rem;
+    color: var(--ink-500);
+}
+
+/* ===== Two-column form row ===== */
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+}
+
+/* ===== Mini forms (IT panel) ===== */
+.mini-form {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.mini-form select {
+    padding: 8px 12px;
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    font-size: 0.9rem;
+    background: #FFFFFF;
+    color: var(--ink-900);
+}
+
+/* ===== Comments & activity thread ===== */
+.thread {
+    margin-bottom: 24px;
+}
+
+.comment {
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
+}
+
+.comment-body {
+    font-size: 0.95rem;
+    color: var(--ink-900);
+    white-space: pre-wrap;
+}
+
+.comment-meta {
+    font-size: 0.8rem;
+    color: var(--ink-500);
+    margin-bottom: 6px;
+}
+
+.activity-line {
+    font-size: 0.85rem;
+    color: var(--ink-500);
+    padding: 6px 2px;
+    border-bottom: 1px dashed var(--line);
+}
+
+.header-badges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.owner-actions .mini-form {
+    margin: 0;
+}
+
 /* ===== Responsive ===== */
 @media (max-width: 600px) {
     .dashboard-header {
@@ -658,6 +759,10 @@ body {
 
     .stat-card {
         flex: 1 1 45%;
+    }
+
+    .form-row {
+        grid-template-columns: 1fr;
     }
 
     .form-actions .btn,

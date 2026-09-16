@@ -40,6 +40,7 @@
             <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Más recientes</option>
             <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Más antiguos</option>
             <option value="title" {% if sort == 'title' %}selected{% endif %}>Título A-Z</option>
+            <option value="priority" {% if sort == 'priority' %}selected{% endif %}>Prioridad</option>
         </select>
         <input type="search" name="q" value="{{ q }}" placeholder="Buscar tickets..." aria-label="Buscar tickets">
         <noscript><button type="submit" class="btn btn-small btn-secondary">Aplicar</button></noscript>

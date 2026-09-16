@@ -16,6 +16,26 @@
                 <label for="description">Descripción</label>
                 <textarea id="description" name="description" rows="6" required placeholder="Descripción detallada del problema..."></textarea>
             </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="priority">Prioridad</label>
+                    <select id="priority" name="priority">
+                        <option value="low">Baja</option>
+                        <option value="medium" selected>Media</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="category">Categoría</label>
+                    <select id="category" name="category">
+                        <option value="hardware">Hardware</option>
+                        <option value="software">Software</option>
+                        <option value="network">Red</option>
+                        <option value="access">Accesos</option>
+                        <option value="other" selected>Otro</option>
+                    </select>
+                </div>
+            </div>
             <div class="form-actions">
                 <a href="{{ url_for('user_dashboard') }}" class="btn btn-secondary">Cancelar</a>
                 <button type="submit" class="btn btn-primary">Enviar ticket</button>

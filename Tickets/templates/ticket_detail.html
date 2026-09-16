@@ -5,14 +5,21 @@
 <div class="ticket-detail">
     <div class="ticket-header">
         <h1>Ticket #{{ ticket['id'] }}: {{ ticket['title'] }}</h1>
-        <span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span>
+        <div class="header-badges">
+            <span class="prio-badge prio-{{ ticket['priority'] }}">{{ ticket['priority'] | priority_label }}</span>
+            <span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span>
+        </div>
     </div>
 
     <div class="ticket-info">
         <p><strong>Enviado por:</strong> {{ ticket['creator_name'] or 'Desconocido' }}</p>
         <p><strong>Asignado a:</strong> {{ ticket['assignee_name'] or 'Sin asignar' }}</p>
+        <p><strong>Categoría:</strong> <span class="cat-chip">{{ ticket['category'] | category_label }}</span></p>
         <p><strong>Creado:</strong> {{ ticket['created_at'] | date_label }}</p>
         <p><strong>Última actualización:</strong> {{ ticket['updated_at'] | date_label }}</p>
+        {% if ticket['resolved_at'] %}
+        <p><strong>Resuelto:</strong> {{ ticket['resolved_at'] | date_label }}</p>
+        {% endif %}
     </div>
 
     <div class="ticket-description">
@@ -22,16 +29,84 @@
 
     {% if session.get('role') == 'it' %}
     <div class="ticket-actions">
-        <h3>Actualizar estado</h3>
-        <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}">
-            <div class="status-selector">
-                <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Abierto</button>
-                <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">En progreso</button>
-                <button type="submit" name="status" value="finished" class="btn btn-small {% if ticket['status'] == 'finished' %}btn-primary{% else %}btn-secondary{% endif %}">Finalizado</button>
-            </div>
+        <h3>Acciones de TI</h3>
+        <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}" class="mini-form">
+            <button type="submit" name="status" value="open" class="btn btn-small {% if ticket['status'] == 'open' %}btn-primary{% else %}btn-secondary{% endif %}">Abierto</button>
+            <button type="submit" name="status" value="in_progress" class="btn btn-small {% if ticket['status'] == 'in_progress' %}btn-primary{% else %}btn-secondary{% endif %}">En progreso</button>
+            <button type="submit" name="status" value="finished" class="btn btn-small {% if ticket['status'] == 'finished' %}btn-primary{% else %}btn-secondary{% endif %}">Finalizado</button>
+        </form>
+        <form method="POST" action="{{ url_for('update_ticket_priority', ticket_id=ticket['id']) }}" class="mini-form">
+            <label for="priority">Prioridad</label>
+            <select id="priority" name="priority">
+                {% for value, label in priorities.items() %}
+                <option value="{{ value }}" {% if ticket['priority'] == value %}selected{% endif %}>{{ label }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-small btn-secondary">Actualizar prioridad</button>
+        </form>
+        <form method="POST" action="{{ url_for('assign_ticket', ticket_id=ticket['id']) }}" class="mini-form">
+            <label for="assignee_id">Asignar a</label>
+            <select id="assignee_id" name="assignee_id">
+                <option value="">Sin asignar</option>
+                {% for user in it_users %}
+                <option value="{{ user['id'] }}" {% if ticket['assigned_to'] == user['id'] %}selected{% endif %}>{{ user['username'] }}</option>
+                {% endfor %}
+            </select>
+            <button type="submit" class="btn btn-small btn-secondary">Asignar</button>
+        </form>
+    </div>
+    {% elif is_owner %}
+    <div class="ticket-actions owner-actions">
+        <form method="POST" action="{{ url_for('update_ticket_status', ticket_id=ticket['id']) }}" class="mini-form">
+            {% if ticket['status'] == 'finished' %}
+            <button type="submit" name="status" value="open" class="btn btn-small btn-secondary">Reabrir ticket</button>
+            {% else %}
+            <button type="submit" name="status" value="finished" class="btn btn-small btn-secondary">Cerrar ticket</button>
+            {% endif %}
         </form>
     </div>
     {% endif %}
+
+    <div class="thread">
+        <h3>Comentarios e historial</h3>
+        {% for entry in comments %}
+            {% if entry['kind'] == 'comment' %}
+            <div class="comment">
+                <div class="comment-meta">{{ entry['author_name'] or 'Desconocido' }} · {{ entry['created_at'] | date_label }}</div>
+                <div class="comment-body">{{ entry['body'] }}</div>
+            </div>
+            {% elif entry['kind'] == 'status' %}
+            <div class="activity-line">
+                {{ entry['author_name'] or 'Sistema' }} cambió el estado a {{ entry['new_value'] | status_label }}
+                · {{ entry['created_at'] | date_label }}
+            </div>
+            {% elif entry['kind'] == 'priority' %}
+            <div class="activity-line">
+                {{ entry['author_name'] or 'Sistema' }} cambió la prioridad a {{ entry['new_value'] | priority_label }}
+                · {{ entry['created_at'] | date_label }}
+            </div>
+            {% elif entry['kind'] == 'assignment' %}
+            <div class="activity-line">
+                {% if entry['new_value'] %}
+                {{ entry['author_name'] or 'Sistema' }} asignó el ticket a {{ entry['new_value'] }}
+                {% else %}
+                {{ entry['author_name'] or 'Sistema' }} quitó la asignación del ticket
+                {% endif %}
+                · {{ entry['created_at'] | date_label }}
+            </div>
+            {% endif %}
+        {% endfor %}
+
+        {% if session.get('role') == 'it' or is_owner %}
+        <form method="POST" action="{{ url_for('add_comment', ticket_id=ticket['id']) }}">
+            <div class="form-group">
+                <label for="body">Agregar comentario</label>
+                <textarea id="body" name="body" rows="3" required placeholder="Escriba un comentario..."></textarea>
+            </div>
+            <button type="submit" class="btn btn-small btn-primary">Publicar</button>
+        </form>
+        {% endif %}
+    </div>
 
     <div class="back-link">
         {% if session.get('role') == 'it' %}

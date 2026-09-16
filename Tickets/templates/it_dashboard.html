@@ -42,6 +42,7 @@
             <option value="newest" {% if sort == 'newest' %}selected{% endif %}>Más recientes</option>
             <option value="oldest" {% if sort == 'oldest' %}selected{% endif %}>Más antiguos</option>
             <option value="title" {% if sort == 'title' %}selected{% endif %}>Título A-Z</option>
+            <option value="priority" {% if sort == 'priority' %}selected{% endif %}>Prioridad</option>
         </select>
         <input type="search" name="q" value="{{ q }}" placeholder="Buscar por título o usuario..." aria-label="Buscar tickets">
         <noscript><button type="submit" class="btn btn-small btn-secondary">Aplicar</button></noscript>
@@ -54,6 +55,7 @@
             <tr>
                 <th>#</th>
                 <th>Título</th>
+                <th>Prioridad</th>
                 <th>Enviado por</th>
                 <th>Asignado a</th>
                 <th>Estado</th>
@@ -66,6 +68,7 @@
             <tr>
                 <td>{{ ticket['id'] }}</td>
                 <td>{{ ticket['title'] }}</td>
+                <td><span class="prio-badge prio-{{ ticket['priority'] }}">{{ ticket['priority'] | priority_label }}</span></td>
                 <td>{{ ticket['creator_name'] or 'Desconocido' }}</td>
                 <td>{{ ticket['assignee_name'] or 'Sin asignar' }}</td>
                 <td><span class="status-badge status-{{ ticket['status'] }}">{{ ticket['status'] | status_label }}</span></td>
